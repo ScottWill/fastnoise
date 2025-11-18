@@ -3,7 +3,7 @@
 // Original code: https://github.com/Auburns/FastNoise
 // The original is MIT licensed, so this is compatible.
 
-use glam::{IVec3, Vec3A, ivec3};
+use glam::{IVec3, Vec3A, ivec3, vec3a};
 use rand::Rng;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
@@ -332,6 +332,12 @@ impl FastNoise {
         pos *= self.frequency;
 
         match self.noise_type {
+            NoiseType::Perlin => self.single_perlin3d_vec(0, pos),
+            NoiseType::PerlinFractal => match self.fractal_type {
+                FractalType::FBM => self.single_perlin_fractal_fbm3d_vec(pos),
+                FractalType::Billow => self.single_perlin_fractal_billow3d_vec(pos),
+                FractalType::RigidMulti => self.single_perlin_fractal_rigid_multi3d_vec(pos),
+            },
             NoiseType::Simplex => self.single_simplex3d_vec(0, pos),
             NoiseType::SimplexFractal => match self.fractal_type {
                 FractalType::FBM => self.single_simplex_fractal_fbm3d_vec(pos),
@@ -674,15 +680,9 @@ impl FastNoise {
         let p0 = pos.floor();
         let p1 = (p0 + 1.0).as_ivec3();
         let ps = match self.interp {
-            Interp::Linear => {
-                pos - p0
-            }
-            Interp::Hermite => {
-                interp_hermite_func_vec(pos - p0)
-            }
-            Interp::Quintic => {
-                interp_quintic_func_vec(pos - p0)
-            }
+            Interp::Linear => pos - p0,
+            Interp::Hermite => interp_hermite_func_vec(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec(pos - p0),
         };
 
         let p0 = p0.as_ivec3();
@@ -838,6 +838,21 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_perlin_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_perlin3d_vec(self.perm[0], pos);
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_perlin3d_vec(self.perm[i as usize], pos) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_perlin_fractal_billow3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum: f32 = fast_abs_f(self.single_perlin3d(self.perm[0], x, y, z)) * 2.0 - 1.0;
         let mut amp: f32 = 1.0;
@@ -857,6 +872,21 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_perlin_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_perlin3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_perlin3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_perlin_fractal_rigid_multi3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum: f32 = 1.0 - fast_abs_f(self.single_perlin3d(self.perm[0], x, y, z));
         let mut amp: f32 = 1.0;
@@ -870,6 +900,21 @@ impl FastNoise {
             amp *= self.gain;
             sum -= (1.0 - fast_abs_f(self.single_perlin3d(self.perm[i as usize], x, y, z))) * amp;
 
+            i += 1;
+        }
+
+        sum
+    }
+
+    fn single_perlin_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = 1.0 - self.single_perlin3d_vec(self.perm[0], pos).abs();
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum -= (1.0 - self.single_perlin3d_vec(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
@@ -948,6 +993,47 @@ impl FastNoise {
         let yf1 = lerp(xf01, xf11, ys);
 
         lerp(yf0, yf1, zs)
+    }
+
+    fn single_perlin3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+        let p0 = pos.floor();
+        let ps = match self.interp {
+            Interp::Linear => pos - p0,
+            Interp::Hermite => interp_hermite_func_vec(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec(pos - p0),
+        };
+
+        let d0 = pos - p0;
+        let d1 = d0 - 1.0;
+
+        let p0 = p0.as_ivec3();
+        let p1 = p0 + 1;
+
+        let xf00 = lerp(
+            self.grad_coord_3d_vec(offset, p0, d0),
+            self.grad_coord_3d_vec(offset, ivec3(p1.x, p0.y, p0.z), vec3a(d1.x, d0.y, d0.z)),
+            ps.x,
+        );
+        let xf10 = lerp(
+            self.grad_coord_3d_vec(offset, ivec3(p0.x, p1.y, p0.z), vec3a(d0.x, d1.y, d0.z)),
+            self.grad_coord_3d_vec(offset, ivec3(p1.x, p1.y, p0.z), vec3a(d1.x, d1.y, d0.z)),
+            ps.x,
+        );
+        let xf01 = lerp(
+            self.grad_coord_3d_vec(offset, ivec3(p0.x, p0.y, p1.z), vec3a(d0.x, d0.y, d1.z)),
+            self.grad_coord_3d_vec(offset, ivec3(p1.x, p0.y, p1.z), vec3a(d1.x, d0.y, d1.z)),
+            ps.x,
+        );
+        let xf11 = lerp(
+            self.grad_coord_3d_vec(offset, ivec3(p0.x, p1.y, p1.z), vec3a(d0.x, d1.y, d1.z)),
+            self.grad_coord_3d_vec(offset, ivec3(p1.x, p1.y, p1.z), d1),
+            ps.x,
+        );
+
+        let yf0 = lerp(xf00, xf10, ps.y);
+        let yf1 = lerp(xf01, xf11, ps.y);
+
+        lerp(yf0, yf1, ps.z)
     }
 
     #[allow(dead_code)]
