@@ -21,7 +21,7 @@ fn main() {
         for x in -HS..HS {
             for z in -HS..HS {
                 // let n = noise.get_noise3d(x as f32, y as f32, z as f32); // 1.49s
-                let n = noise.get_noise3d_vec(glam::vec3a(x as f32, y as f32, z as f32)); // ?
+                let n = noise.noise3d(glam::vec3a(x as f32, y as f32, z as f32)); // ?
                 total += n;
             }
         }

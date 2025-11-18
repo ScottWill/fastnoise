@@ -198,53 +198,22 @@ impl FastNoise {
         self.perm12[(x & 0xff) as usize + self.perm[(y & 0xff) as usize + offset as usize] as usize]
     }
 
-    pub fn index3d_12(&self, offset: u8, x: i32, y: i32, z: i32) -> u8 {
-        let z = (z as usize & 0xff) + offset as usize;
-        let y = (y as usize & 0xff) + self.perm[z] as usize;
-        let z = (x as usize & 0xff) + self.perm[y] as usize;
-        self.perm12[z]
-    }
-
-    pub fn index3d_12_vec(&self, offset: u8, v: IVec3) -> u8 {
+    pub fn index3d_12(&self, offset: u8, v: IVec3) -> u8 {
         let z = (v.z as usize & 0xFF) + offset as usize;
         let y = (v.y as usize & 0xFF) + self.perm[z] as usize;
         let x = (v.x as usize & 0xFF) + self.perm[y] as usize;
         self.perm12[x]
     }
 
-    pub fn index4d_32(&self, offset: u8, x: i32, y: i32, z: i32, w: i32) -> u8 {
-        self.perm[(x as usize & 0xff)
-            + self.perm[(y as usize & 0xff)
-                + self.perm[(z as usize & 0xff)
-                    + self.perm[(w as usize & 0xff) + offset as usize] as usize]
-                    as usize] as usize]
-            & 31
-    }
-
     pub fn index2d_256(&self, offset: u8, x: i32, y: i32) -> u8 {
         self.perm[(x as usize & 0xff) + self.perm[(y as usize & 0xff) + offset as usize] as usize]
     }
 
-    pub fn index3d_256(&self, offset: u8, x: i32, y: i32, z: i32) -> u8 {
-        self.perm[(x as usize & 0xff)
-            + self.perm
-                [(y as usize & 0xff) + self.perm[(z as usize & 0xff) + offset as usize] as usize]
-                as usize]
-    }
-
-    pub fn index3d_256_vec(&self, offset: u8, pos: IVec3) -> u8 {
+    pub fn index3d_256(&self, offset: u8, pos: IVec3) -> u8 {
         let z = (pos.z as usize & 0xFF) + offset as usize;
         let y = (pos.y as usize & 0xFF) + self.perm[z] as usize;
         let x = (pos.x as usize & 0xFF) + self.perm[y] as usize;
         self.perm[x]
-    }
-
-    pub fn index4d_256(&self, offset: u8, x: i32, y: i32, z: i32, w: i32) -> u8 {
-        self.perm[(x as usize & 0xff)
-            + self.perm[(y as usize & 0xff)
-                + self.perm[(z as usize & 0xff)
-                    + self.perm[(w as usize & 0xff) + offset as usize] as usize]
-                    as usize] as usize]
     }
 
     fn val_coord_2d(&self, seed: i32, x: i32, y: i32) -> f32 {
@@ -256,7 +225,7 @@ impl FastNoise {
         (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
     }
 
-    fn val_coord_3d_vec(&self, seed: i32, pos: IVec3) -> f32 {
+    fn val_coord_3d(&self, seed: i32, pos: IVec3) -> f32 {
         use std::num::Wrapping;
 
         let mut n = Wrapping(seed);
@@ -267,14 +236,12 @@ impl FastNoise {
         (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
     }
 
-
-
     fn val_coord_2d_fast(&self, offset: u8, x: i32, y: i32) -> f32 {
         VAL_LUT[self.index2d_256(offset, x, y) as usize]
     }
 
-    fn val_coord_3d_fast_vec(&self, offset: u8, pos: IVec3) -> f32 {
-        VAL_LUT[self.index3d_256_vec(offset, pos) as usize]
+    fn val_coord_3d_fast(&self, offset: u8, pos: IVec3) -> f32 {
+        VAL_LUT[self.index3d_256(offset, pos) as usize]
     }
 
     fn grad_coord_2d(&self, offset: u8, x: i32, y: i32, xd: f32, yd: f32) -> f32 {
@@ -282,51 +249,51 @@ impl FastNoise {
         xd * GRAD_X[lut_pos] + yd * GRAD_Y[lut_pos]
     }
 
-    fn grad_coord_3d_vec(&self, offset: u8, a: IVec3, b: Vec3A) -> f32 {
-        let lut_pos = self.index3d_12_vec(offset, a) as usize;
+    fn grad_coord_3d(&self, offset: u8, a: IVec3, b: Vec3A) -> f32 {
+        let lut_pos = self.index3d_12(offset, a) as usize;
         (b * GRAD_A[lut_pos]).element_sum()
     }
 
-    pub fn get_noise3d_vec(&self, mut pos: Vec3A) -> f32 {
+    pub fn noise3d(&self, mut pos: Vec3A) -> f32 {
         pos *= self.frequency;
 
         match self.noise_type {
             NoiseType::Cellular => match self.cellular_return_type {
-                CellularReturnType::CellValue => self.single_cellular3d_vec(pos),
-                CellularReturnType::Distance => self.single_cellular3d_vec(pos),
-                _ => self.single_cellular_2edge3d_vec(pos),
+                CellularReturnType::CellValue => self.single_cellular3d(pos),
+                CellularReturnType::Distance => self.single_cellular3d(pos),
+                _ => self.single_cellular_2edge3d(pos),
             },
-            NoiseType::Cubic => self.single_cubic3d_vec(0, pos),
+            NoiseType::Cubic => self.single_cubic3d(0, pos),
             NoiseType::CubicFractal => match self.fractal_type {
-                FractalType::FBM => self.single_cubic_fractal_fbm3d_vec(pos),
-                FractalType::Billow => self.single_cubic_fractal_billow3d_vec(pos),
-                FractalType::RigidMulti => self.single_cubic_fractal_rigid_multi3d_vec(pos),
+                FractalType::FBM => self.single_cubic_fractal_fbm3d(pos),
+                FractalType::Billow => self.single_cubic_fractal_billow3d(pos),
+                FractalType::RigidMulti => self.single_cubic_fractal_rigid_multi3d(pos),
             },
-            NoiseType::Perlin => self.single_perlin3d_vec(0, pos),
+            NoiseType::Perlin => self.single_perlin3d(0, pos),
             NoiseType::PerlinFractal => match self.fractal_type {
-                FractalType::FBM => self.single_perlin_fractal_fbm3d_vec(pos),
-                FractalType::Billow => self.single_perlin_fractal_billow3d_vec(pos),
-                FractalType::RigidMulti => self.single_perlin_fractal_rigid_multi3d_vec(pos),
+                FractalType::FBM => self.single_perlin_fractal_fbm3d(pos),
+                FractalType::Billow => self.single_perlin_fractal_billow3d(pos),
+                FractalType::RigidMulti => self.single_perlin_fractal_rigid_multi3d(pos),
             },
-            NoiseType::Simplex => self.single_simplex3d_vec(0, pos),
+            NoiseType::Simplex => self.single_simplex3d(0, pos),
             NoiseType::SimplexFractal => match self.fractal_type {
-                FractalType::FBM => self.single_simplex_fractal_fbm3d_vec(pos),
-                FractalType::Billow => self.single_simplex_fractal_billow3d_vec(pos),
-                FractalType::RigidMulti => self.single_simplex_fractal_rigid_multi3d_vec(pos),
+                FractalType::FBM => self.single_simplex_fractal_fbm3d(pos),
+                FractalType::Billow => self.single_simplex_fractal_billow3d(pos),
+                FractalType::RigidMulti => self.single_simplex_fractal_rigid_multi3d(pos),
             },
-            NoiseType::Value => self.single_value3d_vec(0, pos),
+            NoiseType::Value => self.single_value3d(0, pos),
             NoiseType::ValueFractal => match self.fractal_type {
-                FractalType::FBM => self.single_value_fractal_fbm3d_vec(pos),
-                FractalType::Billow => self.single_value_fractal_billow3d_vec(pos),
-                FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d_vec(pos),
+                FractalType::FBM => self.single_value_fractal_fbm3d(pos),
+                FractalType::Billow => self.single_value_fractal_billow3d(pos),
+                FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d(pos),
             },
-            NoiseType::WhiteNoise => self.get_white_noise3d_vec(pos),
+            NoiseType::WhiteNoise => self.get_white_noise3d(pos),
         }
     }
 
-    #[deprecated(since="0.2.0",note="use get_noise3d_vec instead")]
+    #[deprecated(since="0.2.0",note="use noise3d instead")]
     pub fn get_noise3d(&self, x: f32, y: f32, z: f32) -> f32 {
-        self.get_noise3d_vec(vec3a(x, y, z))
+        self.noise3d(vec3a(x, y, z))
     }
 
     pub fn get_noise(&self, mut x: f32, mut y: f32) -> f32 {
@@ -367,13 +334,13 @@ impl FastNoise {
         }
     }
 
-    fn get_white_noise3d_vec(&self, pos: Vec3A) -> f32 {
+    fn get_white_noise3d(&self, pos: Vec3A) -> f32 {
         let c = ivec3(
             pos.x.to_bits() as i32,
             pos.y.to_bits() as i32,
             pos.z.to_bits() as i32,
         );
-        self.val_coord_3d_vec(self.seed as i32, c ^ (c >> 16))
+        self.val_coord_3d(self.seed as i32, c ^ (c >> 16))
     }
 
     fn get_white_noise(&self, x: f32, y: f32) -> f32 {
@@ -384,15 +351,15 @@ impl FastNoise {
     }
 
     // Value noise
-    fn single_value_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_value3d_vec(self.perm[0], pos);
+    fn single_value_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_value3d(self.perm[0], pos);
         let mut amp = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_value3d_vec(self.perm[i as usize], pos) * amp;
+            sum += self.single_value3d(self.perm[i as usize], pos) * amp;
 
             i += 1;
         }
@@ -400,36 +367,36 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
-    fn single_value_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_value3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+    fn single_value_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_value3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
         let mut i: i32 = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_value3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.single_value3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_value_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = 1.0 - self.single_value3d_vec(self.perm[0], pos).abs();
+    fn single_value_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = 1.0 - self.single_value3d(self.perm[0], pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_value3d_vec(self.perm[i as usize], pos).abs()) * amp;
+            sum -= (1.0 - self.single_value3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
         sum
     }
 
-    fn single_value3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+    fn single_value3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor();
         let p1 = (p0 + 1.0).as_ivec3();
         let ps = match self.interp {
@@ -440,23 +407,23 @@ impl FastNoise {
 
         let p0 = p0.as_ivec3();
         let xf00: f32 = lerp(
-            self.val_coord_3d_fast_vec(offset, p0),
-            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p0.z)),
+            self.val_coord_3d_fast(offset, p0),
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p0.z)),
             ps.x,
         );
         let xf10: f32 = lerp(
-            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p0.z)),
-            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p0.z)),
+            self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p0.z)),
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p0.z)),
             ps.x,
         );
         let xf01: f32 = lerp(
-            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p1.z)),
-            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p1.z)),
+            self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p1.z)),
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p1.z)),
             ps.x,
         );
         let xf11: f32 = lerp(
-            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p1.z)),
-            self.val_coord_3d_fast_vec(offset, p1),
+            self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p1.z)),
+            self.val_coord_3d_fast(offset, p1),
             ps.x,
         );
 
@@ -554,52 +521,52 @@ impl FastNoise {
     }
 
     // Perlin noise
-    fn single_perlin_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_perlin3d_vec(self.perm[0], pos);
+    fn single_perlin_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_perlin3d(self.perm[0], pos);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d_vec(self.perm[i as usize], pos) * amp;
+            sum += self.single_perlin3d(self.perm[i as usize], pos) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_perlin_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_perlin3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+    fn single_perlin_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_perlin3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.single_perlin3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_perlin_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = 1.0 - self.single_perlin3d_vec(self.perm[0], pos).abs();
+    fn single_perlin_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = 1.0 - self.single_perlin3d(self.perm[0], pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_perlin3d_vec(self.perm[i as usize], pos).abs()) * amp;
+            sum -= (1.0 - self.single_perlin3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
         sum
     }
 
-    fn single_perlin3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+    fn single_perlin3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
@@ -614,23 +581,23 @@ impl FastNoise {
         let p1 = p0 + 1;
 
         let xf00 = lerp(
-            self.grad_coord_3d_vec(offset, p0, d0),
-            self.grad_coord_3d_vec(offset, ivec3(p1.x, p0.y, p0.z), vec3a(d1.x, d0.y, d0.z)),
+            self.grad_coord_3d(offset, p0, d0),
+            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p0.z), vec3a(d1.x, d0.y, d0.z)),
             ps.x,
         );
         let xf10 = lerp(
-            self.grad_coord_3d_vec(offset, ivec3(p0.x, p1.y, p0.z), vec3a(d0.x, d1.y, d0.z)),
-            self.grad_coord_3d_vec(offset, ivec3(p1.x, p1.y, p0.z), vec3a(d1.x, d1.y, d0.z)),
+            self.grad_coord_3d(offset, ivec3(p0.x, p1.y, p0.z), vec3a(d0.x, d1.y, d0.z)),
+            self.grad_coord_3d(offset, ivec3(p1.x, p1.y, p0.z), vec3a(d1.x, d1.y, d0.z)),
             ps.x,
         );
         let xf01 = lerp(
-            self.grad_coord_3d_vec(offset, ivec3(p0.x, p0.y, p1.z), vec3a(d0.x, d0.y, d1.z)),
-            self.grad_coord_3d_vec(offset, ivec3(p1.x, p0.y, p1.z), vec3a(d1.x, d0.y, d1.z)),
+            self.grad_coord_3d(offset, ivec3(p0.x, p0.y, p1.z), vec3a(d0.x, d0.y, d1.z)),
+            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p1.z), vec3a(d1.x, d0.y, d1.z)),
             ps.x,
         );
         let xf11 = lerp(
-            self.grad_coord_3d_vec(offset, ivec3(p0.x, p1.y, p1.z), vec3a(d0.x, d1.y, d1.z)),
-            self.grad_coord_3d_vec(offset, ivec3(p1.x, p1.y, p1.z), d1),
+            self.grad_coord_3d(offset, ivec3(p0.x, p1.y, p1.z), vec3a(d0.x, d1.y, d1.z)),
+            self.grad_coord_3d(offset, ivec3(p1.x, p1.y, p1.z), d1),
             ps.x,
         );
 
@@ -737,52 +704,52 @@ impl FastNoise {
 
 
     // Simplex noise
-    fn single_simplex_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.single_simplex3d_vec(self.perm[0], pos);
+    fn single_simplex_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_simplex3d(self.perm[0], pos);
         let mut amp = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_simplex3d_vec(self.perm[i as usize], pos) * amp;
+            sum += self.single_simplex3d(self.perm[i as usize], pos) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_simplex_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.single_simplex3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+    fn single_simplex_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_simplex3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += amp * self.single_simplex3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0);
+            sum += amp * self.single_simplex3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0);
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_simplex_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = 1.0 - self.single_simplex3d_vec(self.perm[0], pos).abs();
+    fn single_simplex_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = 1.0 - self.single_simplex3d(self.perm[0], pos).abs();
         let mut amp = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_simplex3d_vec(self.perm[i as usize], pos).abs()) * amp;
+            sum -= (1.0 - self.single_simplex3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
         sum
     }
 
-    fn single_simplex3d_vec(&self, offset: u8, p: Vec3A) -> f32 {
+    fn single_simplex3d(&self, offset: u8, p: Vec3A) -> f32 {
 
         let mut t = p.element_sum() * F3;
         let q = (p + t).floor();
@@ -822,7 +789,7 @@ impl FastNoise {
             true => 0.0,
             false => {
                 t *= t;
-                t * t * self.grad_coord_3d_vec(offset, q, p0)
+                t * t * self.grad_coord_3d(offset, q, p0)
             }
         };
 
@@ -831,7 +798,7 @@ impl FastNoise {
             true => 0.0,
             false => {
                 t *= t;
-                t * t * self.grad_coord_3d_vec(offset, q + q1, p1)
+                t * t * self.grad_coord_3d(offset, q + q1, p1)
             }
         };
 
@@ -840,7 +807,7 @@ impl FastNoise {
             true => 0.0,
             false => {
                 t *= t;
-                t * t * self.grad_coord_3d_vec(offset, q + q2, p2)
+                t * t * self.grad_coord_3d(offset, q + q2, p2)
             }
         };
 
@@ -849,7 +816,7 @@ impl FastNoise {
             true => 0.0,
             false => {
                 t *= t;
-                t * t * self.grad_coord_3d_vec(offset, q + 1, p3)
+                t * t * self.grad_coord_3d(offset, q + 1, p3)
             }
         };
 
@@ -958,49 +925,49 @@ impl FastNoise {
     }
 
     // Cubic Noise
-    fn single_cubic_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.single_cubic3d_vec(self.perm[0], pos);
+    fn single_cubic_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_cubic3d(self.perm[0], pos);
         let mut amp = 1.0;
         let mut i = 1;
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_cubic3d_vec(self.perm[i as usize], pos) * amp;
+            sum += self.single_cubic3d(self.perm[i as usize], pos) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_cubic_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.single_cubic3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+    fn single_cubic_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_cubic3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp = 1.0;
         let mut i = 1;
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_cubic3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.single_cubic3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
         sum * self.fractal_bounding
     }
 
-    fn single_cubic_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = 1.0 - self.single_cubic3d_vec(self.perm[0], pos).abs();
+    fn single_cubic_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = 1.0 - self.single_cubic3d(self.perm[0], pos).abs();
         let mut amp = 1.0;
         let mut i = 1;
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_cubic3d_vec(self.perm[i as usize], pos).abs()) * amp;
+            sum -= (1.0 - self.single_cubic3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
         sum
     }
 
-    fn single_cubic3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+    fn single_cubic3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor().as_ivec3();
         let p1 = p0 - 1;
         let p2 = p0 + 1;
@@ -1010,124 +977,124 @@ impl FastNoise {
         cubic_lerp(
             cubic_lerp(
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p1.y, p1.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p0.y, p1.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p2.y, p1.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p1.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p1.z)),
-                    p5.x,
-                ),
-                p5.y,
-            ),
-            cubic_lerp(
-                cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p0.z)),
-                    p5.x,
-                ),
-                cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p0.z)),
-                    p5.x,
-                ),
-                cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p0.z)),
-                    p5.x,
-                ),
-                cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p0.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p3.y, p1.z)),
                     p5.x,
                 ),
                 p5.y,
             ),
             cubic_lerp(
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p1.y, p0.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p0.y, p0.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p2.y, p0.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p2.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p3.y, p0.z)),
                     p5.x,
                 ),
                 p5.y,
             ),
             cubic_lerp(
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p1.y, p2.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p0.y, p2.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p2.y, p2.z)),
                     p5.x,
                 ),
                 cubic_lerp(
-                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p3.z)),
-                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p3.y, p2.z)),
+                    p5.x,
+                ),
+                p5.y,
+            ),
+            cubic_lerp(
+                cubic_lerp(
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p1.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p0.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p2.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast(offset, ivec3(p1.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p0.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p2.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast(offset, ivec3(p3.x, p3.y, p3.z)),
                     p5.x,
                 ),
                 p5.y,
@@ -1236,7 +1203,7 @@ impl FastNoise {
 
 
     // Cellular Noise
-    fn single_cellular3d_vec(&self, pos: Vec3A) -> f32 {
+    fn single_cellular3d(&self, pos: Vec3A) -> f32 {
         let [xr, yr, zr] = pos.as_ivec3().to_array();
 
         let mut distance: f32 = f32::MAX;
@@ -1247,7 +1214,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = (vec * vec).element_sum();
@@ -1264,7 +1231,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum();
@@ -1281,7 +1248,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();
@@ -1296,13 +1263,13 @@ impl FastNoise {
         }
 
         match self.cellular_return_type {
-            CellularReturnType::CellValue => self.val_coord_3d_vec(self.seed as i32, c),
+            CellularReturnType::CellValue => self.val_coord_3d(self.seed as i32, c),
             CellularReturnType::Distance => distance,
             _ => 0.0,
         }
     }
 
-    fn single_cellular_2edge3d_vec(&self, pos: Vec3A) -> f32 {
+    fn single_cellular_2edge3d(&self, pos: Vec3A) -> f32 {
         // let xr = fast_round(x);
         // let yr = fast_round(y);
         // let zr = fast_round(z);
@@ -1317,7 +1284,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = (vec * vec).element_sum();
@@ -1336,7 +1303,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum();
@@ -1355,7 +1322,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let lut_pos: u8 = self.index3d_256(0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();
