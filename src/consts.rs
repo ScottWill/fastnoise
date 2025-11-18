@@ -1,8 +1,19 @@
+use glam::{IVec4, Vec3A, ivec4, vec3a};
 
-// Constants that used to be at the top
-pub(super) const GRAD_X: [f32; 12] = [1.0, -1., 1., -1., 1., -1., 1., -1., 0., 0., 0., 0.];
-pub(super) const GRAD_Y: [f32; 12] = [1., 1., -1., -1., 0., 0., 0., 0., 1., -1., 1., -1.];
-pub(super) const GRAD_Z: [f32; 12] = [0., 0., 0., 0., 1., 1., -1., -1., 1., 1., -1., -1.];
+pub(super) const GRAD: [Vec3A; 12] = [
+    vec3a( 1.0,  1.0,  0.0),
+    vec3a(-1.0,  1.0,  0.0),
+    vec3a( 1.0, -1.0,  0.0),
+    vec3a(-1.0, -1.0,  0.0),
+    vec3a( 1.0,  0.0,  1.0),
+    vec3a(-1.0,  0.0,  1.0),
+    vec3a( 1.0,  0.0, -1.0),
+    vec3a(-1.0,  0.0, -1.0),
+    vec3a( 0.0,  1.0,  1.0),
+    vec3a( 0.0, -1.0,  1.0),
+    vec3a( 0.0,  1.0, -1.0),
+    vec3a( 0.0, -1.0, -1.0),
+];
 
 #[allow(dead_code)]
 pub(super) const GRAD_4D: [f32; 128] = [
@@ -1580,26 +1591,28 @@ pub(super) const CELL_3D_Z: [f32; 256] = [
     -0.3599685311,
 ];
 
-pub(super) const FN_CELLULAR_INDEX_MAX: usize = 3;
-pub(super) const X_PRIME: i32 = 1619;
-pub(super) const Y_PRIME: i32 = 31337;
-pub(super) const Z_PRIME: i32 = 6971;
-#[allow(dead_code)]
-pub(super) const W_PRIME: i32 = 1013;
-pub(super) const F3: f32 = 1.0 / 3.0;
-pub(super) const G3: f32 = 1.0 / 6.0;
-#[allow(clippy::excessive_precision)]
-#[allow(clippy::unreadable_literal)]
-pub(super) const SQRT3: f32 = 1.7320508075688772935274463415059;
+pub(super) const FN_CELLULAR_INDEX_MAX: i32 = 3;
+
+// pub(super) const X_PRIME: i32 = 1619;
+// pub(super) const Y_PRIME: i32 = 31337;
+// pub(super) const Z_PRIME: i32 = 6971;
+// #[allow(dead_code)]
+// pub(super) const W_PRIME: i32 = 1013;
+pub(super) const PRIME: IVec4 = ivec4(1619, 31337, 6971, 1013);
+
+// #[allow(clippy::excessive_precision)]
+// #[allow(clippy::unreadable_literal)]
+pub(super) const SQRT3: f32 = 1.7320508;//1.7320508075688772935274463415059;
 pub(super) const F2: f32 = 0.5 * (SQRT3 - 1.0);
+pub(super) const F3: f32 = 1.0 / 3.0;
 pub(super) const G2: f32 = (3.0 - SQRT3) / 6.0;
+pub(super) const G3: f32 = 1.0 / 6.0;
 #[allow(dead_code)]
-#[allow(clippy::excessive_precision)]
-#[allow(clippy::unreadable_literal)]
-pub(super) const F4: f32 = (2.23606797749979 - 1.0) / 4.0;
+pub(super) const F4: f32 = (2.236068 - 1.0) / 4.0;
 #[allow(dead_code)]
-#[allow(clippy::excessive_precision)]
-#[allow(clippy::unreadable_literal)]
-pub(super) const G4: f32 = (5.0 - 2.23606797749979) / 20.0;
+pub(super) const G4: f32 = (5.0 - 2.236068) / 20.0;
 pub(super) const CUBIC_3D_BOUNDING: f32 = 1.0 / (1.5 * 1.5 * 1.5);
 pub(super) const CUBIC_2D_BOUNDING: f32 = 1.0 / 1.5 * 1.5;
+
+pub(super) const COORD_A: i32 = 60493i32;
+pub(super) const COORD_B: f32 = 2147483648.0;
