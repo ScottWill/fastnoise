@@ -1,3 +1,4 @@
+use glam::Vec3A;
 
 // Utility functions
 pub(super) fn fast_floor(f: f32) -> i32 {
@@ -34,9 +35,15 @@ pub(super) fn lerp(a: f32, b: f32, t: f32) -> f32 {
 pub(super) fn interp_hermite_func(t: f32) -> f32 {
     t * t * (3. - 2. * t)
 }
+pub(super) fn interp_hermite_func_vec(t: Vec3A) -> Vec3A {
+    t * t * (3.0 - 2.0 * t)
+}
 
 pub(super) fn interp_quintic_func(t: f32) -> f32 {
-    t * t * t * (t * (t * 6. - 15.) + 10.)
+    t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+}
+pub(super) fn interp_quintic_func_vec(t: Vec3A) -> Vec3A {
+    t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 }
 
 #[allow(clippy::many_single_char_names)]

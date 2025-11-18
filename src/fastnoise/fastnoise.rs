@@ -3,7 +3,7 @@
 // Original code: https://github.com/Auburns/FastNoise
 // The original is MIT licensed, so this is compatible.
 
-use glam::{IVec3, Vec3A};
+use glam::{IVec3, Vec3A, ivec3};
 use rand::Rng;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
@@ -232,6 +232,13 @@ impl FastNoise {
                 as usize]
     }
 
+    pub fn index3d_256_vec(&self, offset: u8, pos: IVec3) -> u8 {
+        let z = (pos.z as usize & 0xFF) + offset as usize;
+        let y = (pos.y as usize & 0xFF) + self.perm[z] as usize;
+        let x = (pos.x as usize & 0xFF) + self.perm[y] as usize;
+        self.perm[x]
+    }
+
     pub fn index4d_256(&self, offset: u8, x: i32, y: i32, z: i32, w: i32) -> u8 {
         self.perm[(x as usize & 0xff)
             + self.perm[(y as usize & 0xff)
@@ -280,6 +287,9 @@ impl FastNoise {
     fn val_coord_3d_fast(&self, offset: u8, x: i32, y: i32, z: i32) -> f32 {
         VAL_LUT[self.index3d_256(offset, x, y, z) as usize]
     }
+    fn val_coord_3d_fast_vec(&self, offset: u8, pos: IVec3) -> f32 {
+        VAL_LUT[self.index3d_256_vec(offset, pos) as usize]
+    }
 
     fn grad_coord_2d(&self, offset: u8, x: i32, y: i32, xd: f32, yd: f32) -> f32 {
         let lut_pos = self.index2d_12(offset, x, y) as usize;
@@ -327,7 +337,13 @@ impl FastNoise {
                 FractalType::FBM => self.single_simplex_fractal_fbm3d_vec(pos),
                 FractalType::Billow => self.single_simplex_fractal_billow3d_vec(pos),
                 FractalType::RigidMulti => self.single_simplex_fractal_rigid_multi3d_vec(pos),
-                            },
+            },
+            NoiseType::Value => self.single_value3d_vec(0, pos),
+            NoiseType::ValueFractal => match self.fractal_type {
+                FractalType::FBM => self.single_value_fractal_fbm3d_vec(pos),
+                FractalType::Billow => self.single_value_fractal_billow3d_vec(pos),
+                FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d_vec(pos),
+            },
             _ => todo!(),
         }
     }
@@ -505,6 +521,22 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_value_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_value3d_vec(self.perm[0], pos);
+        let mut amp = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_value3d_vec(self.perm[i as usize], pos) * amp;
+
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_value_fractal_billow3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum: f32 = fast_abs_f(self.single_value3d(self.perm[0], x, y, z)) * 2.0 - 1.0;
         let mut amp: f32 = 1.0;
@@ -525,6 +557,21 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_value_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = self.single_value3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp: f32 = 1.0;
+        let mut i: i32 = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_value3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_value_fractal_rigid_multi3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum: f32 = 1.0 - fast_abs_f(self.single_value3d(self.perm[0], x, y, z));
         let mut amp: f32 = 1.0;
@@ -538,6 +585,20 @@ impl FastNoise {
             amp *= self.gain;
             sum -= (1.0 - fast_abs_f(self.single_value3d(self.perm[i as usize], x, y, z))) * amp;
 
+            i += 1;
+        }
+        sum
+    }
+
+    fn single_value_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum: f32 = 1.0 - self.single_value3d_vec(self.perm[0], pos).abs();
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum -= (1.0 - self.single_value3d_vec(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
         sum
@@ -607,6 +668,49 @@ impl FastNoise {
         let yf1: f32 = lerp(xf01, xf11, ys);
 
         lerp(yf0, yf1, zs)
+    }
+
+    fn single_value3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+        let p0 = pos.floor();
+        let p1 = (p0 + 1.0).as_ivec3();
+        let ps = match self.interp {
+            Interp::Linear => {
+                pos - p0
+            }
+            Interp::Hermite => {
+                interp_hermite_func_vec(pos - p0)
+            }
+            Interp::Quintic => {
+                interp_quintic_func_vec(pos - p0)
+            }
+        };
+
+        let p0 = p0.as_ivec3();
+        let xf00: f32 = lerp(
+            self.val_coord_3d_fast_vec(offset, p0),
+            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p0.z)),
+            ps.x,
+        );
+        let xf10: f32 = lerp(
+            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p0.z)),
+            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p0.z)),
+            ps.x,
+        );
+        let xf01: f32 = lerp(
+            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p1.z)),
+            self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p1.z)),
+            ps.x,
+        );
+        let xf11: f32 = lerp(
+            self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p1.z)),
+            self.val_coord_3d_fast_vec(offset, p1),
+            ps.x,
+        );
+
+        let yf0: f32 = lerp(xf00, xf10, ps.y);
+        let yf1: f32 = lerp(xf01, xf11, ps.y);
+
+        lerp(yf0, yf1, ps.z)
     }
 
     fn single_value_fractal_fbm(&self, mut x: f32, mut y: f32) -> f32 {
