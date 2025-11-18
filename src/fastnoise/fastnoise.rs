@@ -322,10 +322,12 @@ impl FastNoise {
         pos *= self.frequency;
 
         match self.noise_type {
+            NoiseType::Simplex => self.single_simplex3d_vec(0, pos),
             NoiseType::SimplexFractal => match self.fractal_type {
+                FractalType::FBM => self.single_simplex_fractal_fbm3d_vec(pos),
                 FractalType::Billow => self.single_simplex_fractal_billow3d_vec(pos),
-                _ => todo!(),
-            },
+                FractalType::RigidMulti => self.single_simplex_fractal_rigid_multi3d_vec(pos),
+                            },
             _ => todo!(),
         }
     }
@@ -988,6 +990,21 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_simplex_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_simplex3d_vec(self.perm[0], pos);
+        let mut amp = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_simplex3d_vec(self.perm[i as usize], pos) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_simplex_fractal_billow3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum = fast_abs_f(self.single_simplex3d(self.perm[0], x, y, z)) * 2.0 - 1.0;
         let mut amp = 1.0;
@@ -1034,6 +1051,21 @@ impl FastNoise {
 
             amp *= self.gain;
             sum -= (1.0 - fast_abs_f(self.single_simplex3d(self.perm[i as usize], x, y, z))) * amp;
+            i += 1;
+        }
+
+        sum
+    }
+
+    fn single_simplex_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = 1.0 - self.single_simplex3d_vec(self.perm[0], pos).abs();
+        let mut amp = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum -= (1.0 - self.single_simplex3d_vec(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 

@@ -4,7 +4,7 @@ use std::time::Instant;
 fn main() {
     let mut noise = FastNoise::seeded(1337);
     noise.set_noise_type(NoiseType::SimplexFractal);
-    noise.set_fractal_type(FractalType::Billow);
+    noise.set_fractal_type(FractalType::RigidMulti);
     noise.set_interp(Interp::Quintic);
     noise.set_fractal_octaves(5);
     noise.set_fractal_gain(0.6);
@@ -29,7 +29,14 @@ fn main() {
     let now = Instant::now();
 
     // a good conversion means this value should remain roughly the same
-    // original: -1008301.44
+    // SimplexFractal Billow scalar: -1008301.44 @230ms
+    // SimplexFractal Billow vector: -1008301.06 @160ms
+
+    // SimplexFractal FMB scalar: -399.44904 @215ms
+    // SimplexFractal FMB vector: -399.45044 @155ms
+
+    // SimplexFractal RigidMulti scalar: -519946.78 @225ms
+    // SimplexFractal RigidMulti vector: -519946.78 @155ms
     println!("\nTest Passed with {total} =) in {:?}\n", now - then);
 
 }
