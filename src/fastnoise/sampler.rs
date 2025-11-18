@@ -8,7 +8,7 @@ pub fn sample3d(noise: &FastNoise, min: Vec3A, max: Vec3A, resolution: u32) -> V
     assert!(min.min(max) == min);
     let side = resolution as usize;
     let side_f32 = side as f32;
-    let size = side * side * side;
+    let size = side.pow(3);
     let mut result = Vec::with_capacity(size);
     (0..size)
         .into_par_iter()

@@ -177,7 +177,7 @@ impl FastNoise {
             amp_fractal += amp;
             amp *= self.gain;
         }
-        self.fractal_bounding = 1.0 / amp_fractal;
+        self.fractal_bounding = amp_fractal.recip();
     }
 
     pub fn set_cellular_distance_indices(&mut self, i1: i32, i2: i32) {
@@ -767,9 +767,9 @@ impl FastNoise {
                 (V3A_001, V3A_101)
             }
         } else {
-            if p0.y < p0.z {
+            if p0.z > p0.y {
                 (V3A_001, V3A_011)
-            } else if p0.x < p0.z {
+            } else if p0.z > p0.x {
                 (V3A_010, V3A_011)
             } else {
                 (V3A_010, V3A_110)
@@ -1270,13 +1270,9 @@ impl FastNoise {
     }
 
     fn single_cellular_2edge3d(&self, pos: Vec3A) -> f32 {
-        // let xr = fast_round(x);
-        // let yr = fast_round(y);
-        // let zr = fast_round(z);
         let [xr, yr, zr] = pos.as_ivec3().to_array();
 
         let mut distance: Vec<f32> = vec![f32::MAX; FN_CELLULAR_INDEX_MAX + 1];
-        //FN_DECIMAL distance[FN_CELLULAR_INDEX_MAX+1] = { 999999,999999,999999,999999 };
 
         match self.cellular_distance_function {
             CellularDistanceFunction::Euclidean => {
