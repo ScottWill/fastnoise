@@ -377,43 +377,9 @@ impl FastNoise {
         }
     }
 
-    pub fn get_noise3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
-        x *= self.frequency;
-        y *= self.frequency;
-        z *= self.frequency;
-
-        match self.noise_type {
-            NoiseType::Value => self.single_value3d(0, x, y, z),
-            NoiseType::ValueFractal => match self.fractal_type {
-                FractalType::FBM => self.single_value_fractal_fbm3d(x, y, z),
-                FractalType::Billow => self.single_value_fractal_billow3d(x, y, z),
-                FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d(x, y, z),
-            },
-            NoiseType::Perlin => self.single_perlin3d(0, x, y, z),
-            NoiseType::PerlinFractal => match self.fractal_type {
-                FractalType::FBM => self.single_perlin_fractal_fbm3d(x, y, z),
-                FractalType::Billow => self.single_perlin_fractal_billow3d(x, y, z),
-                FractalType::RigidMulti => self.single_perlin_fractal_rigid_multi3d(x, y, z),
-            },
-            NoiseType::Simplex => self.single_simplex3d(0, x, y, z),
-            NoiseType::SimplexFractal => match self.fractal_type {
-                FractalType::FBM => self.single_simplex_fractal_fbm3d(x, y, z),
-                FractalType::Billow => self.single_simplex_fractal_billow3d(x, y, z),
-                FractalType::RigidMulti => self.single_simplex_fractal_rigid_multi3d(x, y, z),
-            },
-            NoiseType::Cellular => match self.cellular_return_type {
-                CellularReturnType::CellValue => self.single_cellular3d(x, y, z),
-                CellularReturnType::Distance => self.single_cellular3d(x, y, z),
-                _ => self.single_cellular_2edge3d(x, y, z),
-            },
-            NoiseType::WhiteNoise => self.get_white_noise3d(x, y, z),
-            NoiseType::Cubic => self.single_cubic3d(0, x, y, z),
-            NoiseType::CubicFractal => match self.fractal_type {
-                FractalType::FBM => self.single_cubic_fractal_fbm3d(x, y, z),
-                FractalType::Billow => self.single_cubic_fractal_billow3d(x, y, z),
-                FractalType::RigidMulti => self.single_cubic_fractal_rigid_multi3d(x, y, z),
-            },
-        }
+    #[deprecated(since="0.2.0",note="use get_noise3d_vec instead")]
+    pub fn get_noise3d(&self, x: f32, y: f32, z: f32) -> f32 {
+        self.get_noise3d_vec(vec3a(x, y, z))
     }
 
     pub fn get_noise(&self, mut x: f32, mut y: f32) -> f32 {
