@@ -1,6 +1,6 @@
-use std::time::Instant;
-
 use fastnoise::{FastNoise, FractalType};
+use glam::{vec2, vec3a};
+use std::time::Instant;
 
 
 fn main() {
@@ -11,14 +11,19 @@ fn main() {
     let then = Instant::now();
     let mut samples = vec![];
 
-    for x in 0..10000 {
-        for y in 0..10000 {
-            samples.push(noise.get_noise(x as f32, y as f32));
+    for x in 0..1000 {
+        for y in 0..1000 {
+            for z in 0..100 {
+                samples.push(noise.get_noise3d(vec3a(x as f32, y as f32, z as f32)));
+            }
         }
     }
 
     let now = Instant::now();
 
+    let foo: f32 = samples.iter().sum();
+
+    println!("{foo}");
     println!("{:?}", now - then);
 
 }
