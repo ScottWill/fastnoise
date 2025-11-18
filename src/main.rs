@@ -1,6 +1,6 @@
-use std::time::Instant;
-
 use fastnoise::{FastNoise, FractalType};
+use glam::vec2;
+use std::time::Instant;
 
 
 fn main() {
@@ -13,7 +13,7 @@ fn main() {
 
     for x in 0..10000 {
         for y in 0..10000 {
-            samples.push(noise.get_noise(x as f32, y as f32));
+            samples.push(noise.get_noise(vec2(x as f32, y as f32)));
         }
     }
 
