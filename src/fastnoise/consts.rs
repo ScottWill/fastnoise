@@ -3,7 +3,6 @@ use glam::{Vec3A, vec3a};
 // Constants that used to be at the top
 pub(super) const GRAD_X: [f32; 12] = [1., -1., 1., -1., 1., -1.,  1., -1., 0.,  0.,  0.,  0.];
 pub(super) const GRAD_Y: [f32; 12] = [1.,  1., -1., -1., 0.,  0.,  0.,  0., 1., -1.,  1., -1.];
-pub(super) const GRAD_Z: [f32; 12] = [0.,  0.,  0.,  0., 1.,  1., -1., -1., 1.,  1., -1., -1.];
 pub(super) const GRAD_A: [Vec3A; 12] = [
     vec3a( 1.0,  1.0,  0.0),
     vec3a(-1.0,  1.0,  0.0),
