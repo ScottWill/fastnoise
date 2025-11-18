@@ -8,7 +8,7 @@ use rand::Rng;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::{f32, fmt::Debug};
 
 use super::{consts::*, enums::*, utils::*};
 
@@ -343,6 +343,11 @@ impl FastNoise {
         pos *= self.frequency;
 
         match self.noise_type {
+            NoiseType::Cellular => match self.cellular_return_type {
+                CellularReturnType::CellValue => self.single_cellular3d_vec(pos),
+                CellularReturnType::Distance => self.single_cellular3d_vec(pos),
+                _ => self.single_cellular_2edge3d_vec(pos),
+            },
             NoiseType::Cubic => self.single_cubic3d_vec(0, pos),
             NoiseType::CubicFractal => match self.fractal_type {
                 FractalType::FBM => self.single_cubic_fractal_fbm3d_vec(pos),
@@ -2495,6 +2500,72 @@ impl FastNoise {
         }
     }
 
+    fn single_cellular3d_vec(&self, pos: Vec3A) -> f32 {
+        let [xr, yr, zr] = pos.as_ivec3().to_array();
+
+        let mut distance: f32 = f32::MAX;
+        let mut c = IVec3::ZERO;
+        match self.cellular_distance_function {
+            CellularDistanceFunction::Euclidean => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = (vec * vec).element_sum();
+                            if new_distance < distance {
+                                distance = new_distance;
+                                c = i;
+                            }
+                        }
+                    }
+                }
+            }
+            CellularDistanceFunction::Manhattan => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = vec.abs().element_sum();
+                            if new_distance < distance {
+                                distance = new_distance;
+                                c = i;
+                            }
+                        }
+                    }
+                }
+            }
+            CellularDistanceFunction::Natural => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();
+                            if new_distance < distance {
+                                distance = new_distance;
+                                c = i;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        match self.cellular_return_type {
+            CellularReturnType::CellValue => self.val_coord_3d_vec(self.seed as i32, c),
+            CellularReturnType::Distance => distance,
+            _ => 0.0,
+        }
+    }
+
     fn single_cellular_2edge3d(&self, x: f32, y: f32, z: f32) -> f32 {
         let xr = fast_round(x);
         let yr = fast_round(y);
@@ -2579,6 +2650,97 @@ impl FastNoise {
                                     f32::min(distance[i as usize], new_distance),
                                     distance[i as usize - 1],
                                 );
+                            }
+                            distance[0] = f32::min(distance[0], new_distance);
+                        }
+                    }
+                }
+            }
+        }
+
+        match self.cellular_return_type {
+            CellularReturnType::Distance2 => distance[self.cellular_distance_index.1 as usize],
+            CellularReturnType::Distance2Add => {
+                distance[self.cellular_distance_index.1 as usize]
+                    + distance[self.cellular_distance_index.0 as usize]
+            }
+            CellularReturnType::Distance2Sub => {
+                distance[self.cellular_distance_index.1 as usize]
+                    - distance[self.cellular_distance_index.0 as usize]
+            }
+            CellularReturnType::Distance2Mul => {
+                distance[self.cellular_distance_index.1 as usize]
+                    * distance[self.cellular_distance_index.0 as usize]
+            }
+            CellularReturnType::Distance2Div => {
+                distance[self.cellular_distance_index.0 as usize]
+                    / distance[self.cellular_distance_index.1 as usize]
+            }
+            _ => 0.0,
+        }
+    }
+
+    fn single_cellular_2edge3d_vec(&self, pos: Vec3A) -> f32 {
+        // let xr = fast_round(x);
+        // let yr = fast_round(y);
+        // let zr = fast_round(z);
+        let [xr, yr, zr] = pos.as_ivec3().to_array();
+
+        let mut distance: Vec<f32> = vec![f32::MAX; FN_CELLULAR_INDEX_MAX + 1];
+        //FN_DECIMAL distance[FN_CELLULAR_INDEX_MAX+1] = { 999999,999999,999999,999999 };
+
+        match self.cellular_distance_function {
+            CellularDistanceFunction::Euclidean => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = (vec * vec).element_sum();
+                            for i in (0..self.cellular_distance_index.1).rev() {
+                                let min = distance[i as usize];
+                                let max = distance[i as usize - 1];
+                                distance[i as usize] = f32::clamp(new_distance, min, max);
+                            }
+                            distance[0] = f32::min(distance[0], new_distance);
+                        }
+                    }
+                }
+            }
+            CellularDistanceFunction::Manhattan => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = vec.abs().element_sum();
+                            for i in (0..self.cellular_distance_index.1).rev() {
+                                let min = distance[i as usize];
+                                let max = distance[i as usize - 1];
+                                distance[i as usize] = f32::clamp(new_distance, min, max);
+                            }
+                            distance[0] = f32::min(distance[0], new_distance);
+                        }
+                    }
+                }
+            }
+            CellularDistanceFunction::Natural => {
+                for xi in xr - 1..xr + 2 {
+                    for yi in yr - 1..yr + 2 {
+                        for zi in zr - 1..zr + 2 {
+                            let i = ivec3(xi, yi, zi);
+                            let lut_pos: u8 = self.index3d_256_vec(0, i);
+                            let cell = CELL_3D[lut_pos as usize];
+                            let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
+                            let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();
+                            for i in (0..self.cellular_distance_index.1).rev() {
+                                let min = distance[i as usize];
+                                let max = distance[i as usize - 1];
+                                distance[i as usize] = f32::clamp(new_distance, min, max);
                             }
                             distance[0] = f32::min(distance[0], new_distance);
                         }
