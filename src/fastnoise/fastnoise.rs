@@ -3,6 +3,7 @@
 // Original code: https://github.com/Auburns/FastNoise
 // The original is MIT licensed, so this is compatible.
 
+use glam::{IVec3, Vec3A};
 use rand::Rng;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
@@ -146,11 +147,12 @@ impl Default for FastNoise {
 
 // Utility functions
 fn fast_floor(f: f32) -> i32 {
-    if f >= 0.0 {
-        f as i32
-    } else {
-        f as i32 - 1
-    }
+    // if f >= 0.0 {
+    //     f as i32
+    // } else {
+    //     f as i32 - 1
+    // }
+    f.floor() as _
 }
 
 fn fast_round(f: f32) -> i32 {
@@ -159,6 +161,7 @@ fn fast_round(f: f32) -> i32 {
     } else {
         (f - 0.5) as i32
     }
+    // f.round() as _
 }
 
 #[allow(dead_code)]
@@ -329,10 +332,17 @@ impl FastNoise {
     }
 
     pub fn index3d_12(&self, offset: u8, x: i32, y: i32, z: i32) -> u8 {
-        self.perm12[(x as usize & 0xff)
-            + self.perm
-                [(y as usize & 0xff) + self.perm[(z as usize & 0xff) + offset as usize] as usize]
-                as usize]
+        let z = (z as usize & 0xff) + offset as usize;
+        let y = (y as usize & 0xff) + self.perm[z] as usize;
+        let z = (x as usize & 0xff) + self.perm[y] as usize;
+        self.perm12[z]
+    }
+
+    pub fn index3d_12_vec(&self, offset: u8, v: IVec3) -> u8 {
+        let z = (v.z as usize & 0xFF) + offset as usize;
+        let y = (v.y as usize & 0xFF) + self.perm[z] as usize;
+        let x = (v.x as usize & 0xFF) + self.perm[y] as usize;
+        self.perm12[x]
     }
 
     pub fn index4d_32(&self, offset: u8, x: i32, y: i32, z: i32, w: i32) -> u8 {
@@ -409,6 +419,11 @@ impl FastNoise {
         xd * GRAD_X[lut_pos] + yd * GRAD_Y[lut_pos]
     }
 
+    fn grad_coord_3d_vec(&self, offset: u8, a: IVec3, b: Vec3A) -> f32 {
+        let lut_pos = self.index3d_12_vec(offset, a) as usize;
+        (b * GRAD_A[lut_pos]).element_sum()
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn grad_coord_3d(&self, offset: u8, x: i32, y: i32, z: i32, xd: f32, yd: f32, zd: f32) -> f32 {
         let lut_pos = self.index3d_12(offset, x, y, z) as usize;
@@ -436,7 +451,19 @@ impl FastNoise {
             + wd * GRAD_4D[lut_pos + 3]
     }
 
-    pub fn get_noise3d(&self, [mut x, mut y, mut z]: [f32; 3]) -> f32 {
+    pub fn get_noise3d_vec(&self, mut pos: Vec3A) -> f32 {
+        pos *= self.frequency;
+
+        match self.noise_type {
+            NoiseType::SimplexFractal => match self.fractal_type {
+                FractalType::Billow => self.single_simplex_fractal_billow3d_vec(pos),
+                _ => todo!(),
+            },
+            _ => todo!(),
+        }
+    }
+
+    pub fn get_noise3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         x *= self.frequency;
         y *= self.frequency;
         z *= self.frequency;
@@ -1113,6 +1140,21 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_simplex_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_simplex3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += amp * self.single_simplex3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0);
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_simplex_fractal_rigid_multi3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum = 1.0 - fast_abs_f(self.single_simplex3d(self.perm[0], x, y, z));
         let mut amp = 1.0;
@@ -1139,6 +1181,83 @@ impl FastNoise {
             y * self.frequency,
             z * self.frequency,
         )
+    }
+
+    #[allow(clippy::many_single_char_names)]
+    #[allow(clippy::collapsible_if)]
+    #[allow(clippy::suspicious_else_formatting)]
+    fn single_simplex3d_vec(&self, offset: u8, p: Vec3A) -> f32 {
+
+        let mut t = p.element_sum() * F3;
+        let q = (p + t).floor();
+
+        t = q.element_sum() * G3;
+
+        let p0 = p - (q - t);
+
+        let (q1, q2) = if p0.x >= p0.y {
+            if p0.z <= p0.y {
+                (V3A_100, V3A_110)
+            } else if p0.z <= p0.x {
+                (V3A_100, V3A_101)
+            } else {
+                (V3A_001, V3A_101)
+            }
+        } else {
+            if p0.y < p0.z {
+                (V3A_001, V3A_011)
+            } else if p0.x < p0.z {
+                (V3A_010, V3A_011)
+            } else {
+                (V3A_010, V3A_110)
+            }
+        };
+
+        let p1 = p0 - q1 + G3;
+        let p2 = p0 - q2 + 2.0 * G3;
+        let p3 = p0 - 1.0 + 3.0 * G3;
+
+        let q = q.as_ivec3();
+        let q1 = q1.as_ivec3();
+        let q2 = q2.as_ivec3();
+
+        t = 0.6 - (p0 * p0).element_sum();
+        let n0 = match t < 0.0 {
+            true => 0.0,
+            false => {
+                t *= t;
+                t * t * self.grad_coord_3d_vec(offset, q, p0)
+            }
+        };
+
+        t = 0.6 - (p1 * p1).element_sum();
+        let n1 = match t < 0.0 {
+            true => 0.0,
+            false => {
+                t *= t;
+                t * t * self.grad_coord_3d_vec(offset, q + q1, p1)
+            }
+        };
+
+        t = 0.6 - (p2 * p2).element_sum();
+        let n2 = match t < 0.0 {
+            true => 0.0,
+            false => {
+                t *= t;
+                t * t * self.grad_coord_3d_vec(offset, q + q2, p2)
+            }
+        };
+
+        t = 0.6 - (p3 * p3).element_sum();
+        let n3 = match t < 0.0 {
+            true => 0.0,
+            false => {
+                t *= t;
+                t * t * self.grad_coord_3d_vec(offset, q + 1, p3)
+            }
+        };
+
+        32.0 * (n0 + n1 + n2 + n3)
     }
 
     #[allow(clippy::many_single_char_names)]

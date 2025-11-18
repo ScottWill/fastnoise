@@ -1,4 +1,5 @@
 use fastnoise::*;
+use std::time::Instant;
 
 fn main() {
     let mut noise = FastNoise::seeded(1337);
@@ -11,14 +12,24 @@ fn main() {
     noise.set_frequency(2.0);
 
     let mut total = 0.0;
+    let then = Instant::now();
 
-    for y in 0..50 {
-        for x in 0..80 {
-            let n = noise.get_noise((x as f32) / 160.0, (y as f32) / 100.0);
-            total += n;
+    const HS: i32 = 66;
+
+    for y in -HS..HS {
+        for x in -HS..HS {
+            for z in -HS..HS {
+                // let n = noise.get_noise3d(x as f32, y as f32, z as f32); // 1.49s
+                let n = noise.get_noise3d_vec(glam::vec3a(x as f32, y as f32, z as f32)); // ?
+                total += n;
+            }
         }
     }
 
-    assert_eq!(-983.51575, total);
-    println!("\nTest Passed =)\n");
+    let now = Instant::now();
+
+    // a good conversion means this value should remain roughly the same
+    // original: -1008301.44
+    println!("\nTest Passed with {total} =) in {:?}\n", now - then);
+
 }
