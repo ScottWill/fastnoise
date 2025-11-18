@@ -1,4 +1,5 @@
 use fastnoise::*;
+use glam::{IVec3, Vec3A, vec3a};
 use std::time::Instant;
 
 fn main() {
@@ -16,16 +17,25 @@ fn main() {
     let then = Instant::now();
 
     const HS: i32 = 66;
+    const VS: Vec3A = Vec3A::splat(HS as f32);
 
-    for y in -HS..HS {
-        for x in -HS..HS {
-            for z in -HS..HS {
-                // let n = noise.get_noise3d(x as f32, y as f32, z as f32); // 1.49s
-                let n = noise.noise3d(glam::vec3a(x as f32, y as f32, z as f32)); // ?
-                total += n;
-            }
-        }
-    }
+    // let mut i = 0;
+    // for y in -HS..HS {
+    //     for x in -HS..HS {
+    //         for z in -HS..HS {
+    //             // let n = noise.get_noise3d(x as f32, y as f32, z as f32); // 1.49s
+    //             let n = noise.noise3d(glam::vec3a(x as f32, y as f32, z as f32)); // ?
+    //             total += n;
+    //             i += 1;
+    //         }
+    //     }
+    // }
+
+    // println!("{i}"); //2299968
+
+    //574992 @230.428125ms
+    let total: f32 = sample3d(&noise, -VS, VS, 132).iter().sum();
+    // 574992 @50.279833ms
 
     let now = Instant::now();
 
