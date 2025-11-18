@@ -22,6 +22,7 @@ pub(super) fn fast_abs_f(i: f32) -> f32 {
     f32::abs(i)
 }
 
+#[inline]
 pub(super) fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + t * (b - a)
 }
@@ -29,6 +30,8 @@ pub(super) fn lerp(a: f32, b: f32, t: f32) -> f32 {
 pub(super) fn interp_hermite_func(t: f32) -> f32 {
     t * t * (3. - 2. * t)
 }
+
+#[inline]
 pub(super) fn interp_hermite_func_vec(t: Vec3A) -> Vec3A {
     t * t * (3.0 - 2.0 * t)
 }
@@ -36,11 +39,14 @@ pub(super) fn interp_hermite_func_vec(t: Vec3A) -> Vec3A {
 pub(super) fn interp_quintic_func(t: f32) -> f32 {
     t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 }
+
+#[inline]
 pub(super) fn interp_quintic_func_vec(t: Vec3A) -> Vec3A {
     t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 }
 
 #[allow(clippy::many_single_char_names)]
+#[inline]
 pub(super) fn cubic_lerp(a: f32, b: f32, c: f32, d: f32, t: f32) -> f32 {
     let p = (d - c) - (a - b);
     t * t * t * p + t * t * ((a - b) - p) + t * (c - a) + b

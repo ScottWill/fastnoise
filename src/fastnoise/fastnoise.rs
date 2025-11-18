@@ -198,6 +198,7 @@ impl FastNoise {
         self.perm12[(x & 0xff) as usize + self.perm[(y & 0xff) as usize + offset as usize] as usize]
     }
 
+    #[inline]
     pub fn index3d_12(&self, offset: u8, v: IVec3) -> u8 {
         let z = (v.z as usize & 0xFF) + offset as usize;
         let y = (v.y as usize & 0xFF) + self.perm[z] as usize;
@@ -209,6 +210,7 @@ impl FastNoise {
         self.perm[(x as usize & 0xff) + self.perm[(y as usize & 0xff) + offset as usize] as usize]
     }
 
+    #[inline]
     pub fn index3d_256(&self, offset: u8, pos: IVec3) -> u8 {
         let z = (pos.z as usize & 0xFF) + offset as usize;
         let y = (pos.y as usize & 0xFF) + self.perm[z] as usize;
@@ -225,6 +227,7 @@ impl FastNoise {
         (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
     }
 
+    #[inline]
     fn val_coord_3d(&self, seed: i32, pos: IVec3) -> f32 {
         use std::num::Wrapping;
 
@@ -240,6 +243,7 @@ impl FastNoise {
         VAL_LUT[self.index2d_256(offset, x, y) as usize]
     }
 
+    #[inline]
     fn val_coord_3d_fast(&self, offset: u8, pos: IVec3) -> f32 {
         VAL_LUT[self.index3d_256(offset, pos) as usize]
     }
@@ -249,6 +253,7 @@ impl FastNoise {
         xd * GRAD_X[lut_pos] + yd * GRAD_Y[lut_pos]
     }
 
+    #[inline]
     fn grad_coord_3d(&self, offset: u8, a: IVec3, b: Vec3A) -> f32 {
         let lut_pos = self.index3d_12(offset, a) as usize;
         (b * GRAD_A[lut_pos]).element_sum()
