@@ -267,6 +267,17 @@ impl FastNoise {
         (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
     }
 
+    fn val_coord_3d_vec(&self, seed: i32, pos: IVec3) -> f32 {
+        use std::num::Wrapping;
+
+        let mut n = Wrapping(seed);
+        n ^= Wrapping(X_PRIME) * Wrapping(pos.x);
+        n ^= Wrapping(Y_PRIME) * Wrapping(pos.y);
+        n ^= Wrapping(Z_PRIME) * Wrapping(pos.z);
+
+        (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
+    }
+
     #[allow(dead_code)]
     #[allow(clippy::many_single_char_names)]
     fn val_coord_4d(&self, seed: i32, x: i32, y: i32, z: i32, w: i32) -> f32 {
@@ -350,6 +361,7 @@ impl FastNoise {
                 FractalType::Billow => self.single_value_fractal_billow3d_vec(pos),
                 FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d_vec(pos),
             },
+            NoiseType::WhiteNoise => self.get_white_noise3d_vec(pos),
             _ => todo!(),
         }
     }
@@ -458,6 +470,15 @@ impl FastNoise {
             yc ^ (yc >> 16),
             zc ^ (zc >> 16),
         )
+    }
+
+    fn get_white_noise3d_vec(&self, pos: Vec3A) -> f32 {
+        let c = ivec3(
+            pos.x.to_bits() as i32,
+            pos.y.to_bits() as i32,
+            pos.z.to_bits() as i32,
+        );
+        self.val_coord_3d_vec(self.seed as i32, c ^ (c >> 16))
     }
 
     fn get_white_noise(&self, x: f32, y: f32) -> f32 {
