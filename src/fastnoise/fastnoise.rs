@@ -3,7 +3,7 @@
 // Original code: https://github.com/Auburns/FastNoise
 // The original is MIT licensed, so this is compatible.
 
-use glam::{IVec3, Vec3A, ivec3, vec3a};
+use glam::{IVec3, Vec3A, ivec3, vec3a, vec4};
 use rand::Rng;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
@@ -411,29 +411,22 @@ impl FastNoise {
         };
 
         let p0 = p0.as_ivec3();
-        let xf00: f32 = lerp(
+        let q0 = vec4(
             self.val_coord_3d_fast(offset, p0),
-            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p0.z)),
-            ps.x,
-        );
-        let xf10: f32 = lerp(
             self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p0.z)),
-            self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p0.z)),
-            ps.x,
-        );
-        let xf01: f32 = lerp(
             self.val_coord_3d_fast(offset, ivec3(p0.x, p0.y, p1.z)),
-            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p1.z)),
-            ps.x,
-        );
-        let xf11: f32 = lerp(
             self.val_coord_3d_fast(offset, ivec3(p0.x, p1.y, p1.z)),
+        );
+        let q1 = vec4(
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p0.z)),
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p1.y, p0.z)),
+            self.val_coord_3d_fast(offset, ivec3(p1.x, p0.y, p1.z)),
             self.val_coord_3d_fast(offset, p1),
-            ps.x,
         );
 
-        let yf0: f32 = lerp(xf00, xf10, ps.y);
-        let yf1: f32 = lerp(xf01, xf11, ps.y);
+        let qf = q0.lerp(q1, ps.x);
+        let yf0 = lerp(qf.x, qf.y, ps.y);
+        let yf1 = lerp(qf.z, qf.w, ps.y);
 
         lerp(yf0, yf1, ps.z)
     }
@@ -585,29 +578,22 @@ impl FastNoise {
         let p0 = p0.as_ivec3();
         let p1 = p0 + 1;
 
-        let xf00 = lerp(
+        let q0 = vec4(
             self.grad_coord_3d(offset, p0, d0),
-            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p0.z), vec3a(d1.x, d0.y, d0.z)),
-            ps.x,
-        );
-        let xf10 = lerp(
             self.grad_coord_3d(offset, ivec3(p0.x, p1.y, p0.z), vec3a(d0.x, d1.y, d0.z)),
-            self.grad_coord_3d(offset, ivec3(p1.x, p1.y, p0.z), vec3a(d1.x, d1.y, d0.z)),
-            ps.x,
-        );
-        let xf01 = lerp(
             self.grad_coord_3d(offset, ivec3(p0.x, p0.y, p1.z), vec3a(d0.x, d0.y, d1.z)),
-            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p1.z), vec3a(d1.x, d0.y, d1.z)),
-            ps.x,
-        );
-        let xf11 = lerp(
             self.grad_coord_3d(offset, ivec3(p0.x, p1.y, p1.z), vec3a(d0.x, d1.y, d1.z)),
+        );
+        let q1 = vec4(
+            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p0.z), vec3a(d1.x, d0.y, d0.z)),
+            self.grad_coord_3d(offset, ivec3(p1.x, p1.y, p0.z), vec3a(d1.x, d1.y, d0.z)),
+            self.grad_coord_3d(offset, ivec3(p1.x, p0.y, p1.z), vec3a(d1.x, d0.y, d1.z)),
             self.grad_coord_3d(offset, ivec3(p1.x, p1.y, p1.z), d1),
-            ps.x,
         );
 
-        let yf0 = lerp(xf00, xf10, ps.y);
-        let yf1 = lerp(xf01, xf11, ps.y);
+        let qf = q0.lerp(q1, ps.x);
+        let yf0 = lerp(qf.x, qf.y, ps.y);
+        let yf1 = lerp(qf.z, qf.w, ps.y);
 
         lerp(yf0, yf1, ps.z)
     }
