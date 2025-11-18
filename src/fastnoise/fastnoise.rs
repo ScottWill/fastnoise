@@ -343,6 +343,12 @@ impl FastNoise {
         pos *= self.frequency;
 
         match self.noise_type {
+            NoiseType::Cubic => self.single_cubic3d_vec(0, pos),
+            NoiseType::CubicFractal => match self.fractal_type {
+                FractalType::FBM => self.single_cubic_fractal_fbm3d_vec(pos),
+                FractalType::Billow => self.single_cubic_fractal_billow3d_vec(pos),
+                FractalType::RigidMulti => self.single_cubic_fractal_rigid_multi3d_vec(pos),
+            },
             NoiseType::Perlin => self.single_perlin3d_vec(0, pos),
             NoiseType::PerlinFractal => match self.fractal_type {
                 FractalType::FBM => self.single_perlin_fractal_fbm3d_vec(pos),
@@ -1890,6 +1896,20 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_cubic_fractal_fbm3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_cubic3d_vec(self.perm[0], pos);
+        let mut amp = 1.0;
+        let mut i = 1;
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_cubic3d_vec(self.perm[i as usize], pos) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_cubic_fractal_billow3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum = fast_abs_f(self.single_cubic3d(self.perm[0], x, y, z)) * 2.0 - 1.0;
         let mut amp = 1.0;
@@ -1908,6 +1928,20 @@ impl FastNoise {
         sum * self.fractal_bounding
     }
 
+    fn single_cubic_fractal_billow3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = self.single_cubic3d_vec(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp = 1.0;
+        let mut i = 1;
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_cubic3d_vec(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
     fn single_cubic_fractal_rigid_multi3d(&self, mut x: f32, mut y: f32, mut z: f32) -> f32 {
         let mut sum = 1.0 - fast_abs_f(self.single_cubic3d(self.perm[0], x, y, z));
         let mut amp = 1.0;
@@ -1919,6 +1953,20 @@ impl FastNoise {
 
             amp *= self.gain;
             sum -= (1.0 - fast_abs_f(self.single_cubic3d(self.perm[i as usize], x, y, z))) * amp;
+            i += 1;
+        }
+
+        sum
+    }
+
+    fn single_cubic_fractal_rigid_multi3d_vec(&self, mut pos: Vec3A) -> f32 {
+        let mut sum = 1.0 - self.single_cubic3d_vec(self.perm[0], pos).abs();
+        let mut amp = 1.0;
+        let mut i = 1;
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum -= (1.0 - self.single_cubic3d_vec(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
@@ -2080,6 +2128,142 @@ impl FastNoise {
                 ys,
             ),
             zs,
+        ) * CUBIC_3D_BOUNDING
+    }
+
+    fn single_cubic3d_vec(&self, offset: u8, pos: Vec3A) -> f32 {
+        let p0 = pos.floor().as_ivec3();
+        let p1 = p0 - 1;
+        let p2 = p0 + 1;
+        let p3 = p0 + 2;
+        let p5 = pos - p0.as_vec3a();
+
+        cubic_lerp(
+            cubic_lerp(
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p1.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p1.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p1.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p1.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p1.z)),
+                    p5.x,
+                ),
+                p5.y,
+            ),
+            cubic_lerp(
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p0.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p0.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p0.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p0.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p0.z)),
+                    p5.x,
+                ),
+                p5.y,
+            ),
+            cubic_lerp(
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p2.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p2.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p2.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p2.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p2.z)),
+                    p5.x,
+                ),
+                p5.y,
+            ),
+            cubic_lerp(
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p1.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p1.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p0.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p0.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p2.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p2.y, p3.z)),
+                    p5.x,
+                ),
+                cubic_lerp(
+                    self.val_coord_3d_fast_vec(offset, ivec3(p1.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p0.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p2.x, p3.y, p3.z)),
+                    self.val_coord_3d_fast_vec(offset, ivec3(p3.x, p3.y, p3.z)),
+                    p5.x,
+                ),
+                p5.y,
+            ),
+            p5.z,
         ) * CUBIC_3D_BOUNDING
     }
 
