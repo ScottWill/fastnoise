@@ -2,11 +2,6 @@ use glam::Vec3A;
 
 // Utility functions
 pub(super) fn fast_floor(f: f32) -> i32 {
-    // if f >= 0.0 {
-    //     f as i32
-    // } else {
-    //     f as i32 - 1
-    // }
     f.floor() as _
 }
 
@@ -16,7 +11,6 @@ pub(super) fn fast_round(f: f32) -> i32 {
     } else {
         (f - 0.5) as i32
     }
-    // f.round() as _
 }
 
 #[allow(dead_code)]
