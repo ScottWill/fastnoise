@@ -1,26 +1,48 @@
-use std::time::Instant;
+use bracket_color::prelude::*;
+// use bracket_noise::prelude::*;
 
-use fastnoise::{FastNoise, FractalType};
 
+use crossterm::queue;
+use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
+use fastnoise::*;
+use std::io::{stdout, Write};
+
+fn print_color(color: RGB, text: &str) {
+    queue!(
+        stdout(),
+        SetForegroundColor(Rgb {
+            r: (color.r * 255.0) as u8,
+            g: (color.g * 255.0) as u8,
+            b: (color.b * 255.0) as u8,
+        })
+    )
+    .expect("Command Fail");
+    queue!(stdout(), Print(text)).expect("Command fail");
+}
 
 fn main() {
+    // let mut rng = RandomNumberGenerator::new();
+    let mut noise = FastNoise::seeded(1337);
+    noise.set_noise_type(NoiseType::SimplexFractal);
+    noise.set_fractal_type(FractalType::Billow);
+    noise.set_interp(Interp::Quintic);
+    noise.set_fractal_octaves(5);
+    noise.set_fractal_gain(0.6);
+    noise.set_fractal_lacunarity(2.0);
+    noise.set_frequency(2.0);
 
-    let mut noise = FastNoise::default();
-    noise.set_fractal_type(FractalType::FBM);
-
-    let then = Instant::now();
-    let mut samples = vec![];
-
-    for x in 0..1000 {
-        for y in 0..1000 {
-            for z in 0..100 {
-                samples.push(noise.get_noise3d([x as f32, y as f32, z as f32]));
+    for y in 0..50 {
+        for x in 0..80 {
+            let n = noise.get_noise((x as f32) / 160.0, (y as f32) / 100.0);
+            if n < 0.0 {
+                print_color(RGB::from_f32(0.0, 0.0, 1.0 - (0.0 - n)), "░");
+            } else {
+                print_color(RGB::from_f32(0.0, n, 0.0), "░");
             }
         }
+        print_color(RGB::named(WHITE), "\n");
     }
 
-    let now = Instant::now();
-
-    println!("{:?}", now - then);
-
+    print_color(RGB::named(WHITE), "\n");
+    stdout().flush().expect("Flush Fail");
 }
