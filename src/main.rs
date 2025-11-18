@@ -3,8 +3,9 @@ use std::time::Instant;
 
 fn main() {
     let mut noise = FastNoise::seeded(1337);
-    noise.set_noise_type(NoiseType::SimplexFractal);
-    noise.set_fractal_type(FractalType::RigidMulti);
+    noise.set_noise_type(NoiseType::Cellular);
+    noise.set_cellular_return_type(CellularReturnType::Distance);
+    noise.set_fractal_type(FractalType::Billow);
     noise.set_interp(Interp::Quintic);
     noise.set_fractal_octaves(5);
     noise.set_fractal_gain(0.6);
@@ -28,7 +29,18 @@ fn main() {
 
     let now = Instant::now();
 
+    println!("\nTest Passed with {total} @{:?}\n", now - then);
+
     // a good conversion means this value should remain roughly the same
+    // Cellular Natural scalar: 1884.771 @195ms
+    // Cellular Natural vector: 1884.771 @222.782041ms !!
+
+    // Cubic scalar: 303.34818 @119ms
+    // Cubic vector: 303.34818 @122ms !
+
+    // CubicFractal Billow scalar: -1562558.1 @508ms
+    // CubicFractal Billow vector: -1562558.1 @520ms
+
     // SimplexFractal Billow scalar: -1008301.44 @230ms
     // SimplexFractal Billow vector: -1008301.06 @160ms
 
@@ -37,6 +49,17 @@ fn main() {
 
     // SimplexFractal RigidMulti scalar: -519946.78 @225ms
     // SimplexFractal RigidMulti vector: -519946.78 @155ms
-    println!("\nTest Passed with {total} =) in {:?}\n", now - then);
+
+    // Value scalar: 1023.7918 @30ms
+    // Value vector: 1023.7918 @38ms !
+
+    // ValueFractal Billow scalar: 10650.566 @100ms
+    //                             10650.566 @100ms
+
+    // PerlinFractal RigidMulti scalar: -715432.2 @270ms
+    // PerlinFractal RigidMulti vector: -715432.2 @480ms !!
+
+    // WhiteNoise scalar: 354.1004 @10ms
+    // WhiteNoise vector: 354.1004 @17.ms !!
 
 }
