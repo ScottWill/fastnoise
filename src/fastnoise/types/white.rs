@@ -2,9 +2,34 @@ use glam::{Vec3A, ivec3};
 
 use crate::fastnoise::{Sampler, utils::val_coord_3d};
 
+#[derive(Clone, Copy)]
+pub struct WhiteNoiseBuilder {
+    frequency: f32,
+    seed: u64,
+}
+
+impl WhiteNoiseBuilder {
+    pub fn frequency(mut self, frequency: f32) -> Self {
+        self.frequency = frequency;
+        self
+    }
+    pub fn seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
+
+    pub fn build(self) -> WhiteNoise {
+        WhiteNoise {
+            frequency: self.frequency,
+            seed: self.seed as i32,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct WhiteNoise {
     frequency: f32,
-    seed: f32,
+    seed: i32,
 }
 
 impl Sampler for WhiteNoise {
@@ -21,6 +46,6 @@ impl WhiteNoise {
             pos.y.to_bits() as i32,
             pos.z.to_bits() as i32,
         );
-        val_coord_3d(self.seed as i32, c ^ (c >> 16))
+        val_coord_3d(self.seed, c ^ (c >> 16))
     }
 }
