@@ -259,9 +259,8 @@ impl FastNoise {
         (b * GRAD_A[lut_pos]).element_sum()
     }
 
-    pub fn noise3d(&self, mut pos: Vec3A) -> f32 {
-        pos *= self.frequency;
-
+    pub fn noise3d<V: Into<Vec3A>>(&self, pos: V) -> f32 {
+        let pos = pos.into() * self.frequency;
         match self.noise_type {
             NoiseType::Cellular => match self.cellular_return_type {
                 CellularReturnType::CellValue => self.single_cellular3d(pos),
@@ -395,7 +394,7 @@ impl FastNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_value3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_value3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
         sum
@@ -474,7 +473,7 @@ impl FastNoise {
             y *= self.lacunarity;
 
             amp *= self.gain;
-            sum -= (1.0 - fast_abs_f(self.single_value(self.perm[i as usize], x, y))) * amp;
+            sum += -(1.0 - fast_abs_f(self.single_value(self.perm[i as usize], x, y))) * amp;
             i += 1;
         }
 
@@ -557,7 +556,7 @@ impl FastNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_perlin3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_perlin3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
@@ -643,7 +642,7 @@ impl FastNoise {
             y *= self.lacunarity;
 
             amp *= self.gain;
-            sum -= (1.0 - fast_abs_f(self.single_perlin(self.perm[i as usize], x, y))) * amp;
+            sum += -(1.0 - fast_abs_f(self.single_perlin(self.perm[i as usize], x, y))) * amp;
             i += 1;
         }
 
@@ -733,7 +732,7 @@ impl FastNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_simplex3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_simplex3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
@@ -858,7 +857,7 @@ impl FastNoise {
             y *= self.lacunarity;
 
             amp *= self.gain;
-            sum -= (1.0 - self.single_simplex(self.perm[i as usize], x, y)) * amp;
+            sum += -(1.0 - self.single_simplex(self.perm[i as usize], x, y)) * amp;
             i += 1;
         }
 
@@ -951,7 +950,7 @@ impl FastNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - self.single_cubic3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_cubic3d(self.perm[i as usize], pos).abs()) * amp;
             i += 1;
         }
 
@@ -1138,7 +1137,7 @@ impl FastNoise {
             y *= self.lacunarity;
 
             amp *= self.gain;
-            sum -= (1.0 - fast_abs_f(self.single_cubic(self.perm[i as usize], x, y))) * amp;
+            sum += -(1.0 - fast_abs_f(self.single_cubic(self.perm[i as usize], x, y))) * amp;
             i += 1;
         }
 

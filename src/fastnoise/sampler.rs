@@ -1,9 +1,26 @@
-use glam::{Vec3A, vec3a};
+use glam::{Vec3, vec3a};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 use super::{FastNoise, utils::lerp};
 
-pub fn sample3d(noise: &FastNoise, min: Vec3A, max: Vec3A, resolution: u32) -> Vec<f32> {
+pub fn sample_plane(noise: &FastNoise, min: Vec3, max: Vec3, resolution: u32) -> Vec<f32> {
+    assert_ne!(0, resolution);
+    assert!(min.min(max) == min);
+    let side = resolution as usize;
+    let side_f32 = side as f32;
+    let mut result = Vec::with_capacity(side);
+    (0..side)
+        .into_par_iter()
+        .map(|i| {
+            let t = i as f32 / side_f32;
+            let v = min.lerp(max, t);
+            noise.noise3d(v)
+        })
+        .collect_into_vec(&mut result);
+    result
+}
+
+pub fn sample3d(noise: &FastNoise, min: Vec3, max: Vec3, resolution: u32) -> Vec<f32> {
     assert_ne!(0, resolution);
     assert!(min.min(max) == min);
     let side = resolution as usize;

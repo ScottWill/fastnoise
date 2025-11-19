@@ -1,23 +1,23 @@
 use fastnoise::*;
-use glam::{IVec3, Vec3A, vec3a};
+use glam::Vec3;
 use std::time::Instant;
 
 fn main() {
     let mut noise = FastNoise::seeded(1337);
-    noise.set_noise_type(NoiseType::Cellular);
+    noise.set_noise_type(NoiseType::SimplexFractal);
     noise.set_cellular_return_type(CellularReturnType::Distance);
-    noise.set_fractal_type(FractalType::Billow);
+    noise.set_fractal_type(FractalType::RigidMulti);
     noise.set_interp(Interp::Quintic);
     noise.set_fractal_octaves(5);
     noise.set_fractal_gain(0.6);
     noise.set_fractal_lacunarity(2.0);
     noise.set_frequency(2.0);
 
-    let mut total = 0.0;
+    // let mut total = 0.0;
     let then = Instant::now();
 
     const HS: i32 = 66;
-    const VS: Vec3A = Vec3A::splat(HS as f32);
+    const VS: Vec3 = Vec3::splat(HS as f32);
 
     // let mut i = 0;
     // for y in -HS..HS {
@@ -50,6 +50,8 @@ fn main() {
 
     // CubicFractal Billow scalar: -1562558.1 @508ms
     // CubicFractal Billow vector: -1562558.1 @520ms
+    // CubicFractal Billow rayon:  -1562536.8 @100ms
+    //92.760291ms
 
     // SimplexFractal Billow scalar: -1008301.44 @230ms
     // SimplexFractal Billow vector: -1008301.06 @160ms
@@ -59,15 +61,19 @@ fn main() {
 
     // SimplexFractal RigidMulti scalar: -519946.78 @225ms
     // SimplexFractal RigidMulti vector: -519946.78 @155ms
+    //                                   -519939.13 @38ms
 
     // Value scalar: 1023.7918 @30ms
     // Value vector: 1023.7918 @38ms !
 
     // ValueFractal Billow scalar: 10650.566 @100ms
     //                             10650.566 @100ms
+                                // 10650.904 @28ms mwa
 
     // PerlinFractal RigidMulti scalar: -715432.2 @270ms
     // PerlinFractal RigidMulti vector: -715432.2 @480ms !!
+    //                           rayon: -715432.2 @68.ms chefs kiss
+    //                        inlining: 35ms ooo
 
     // WhiteNoise scalar: 354.1004 @10ms
     // WhiteNoise vector: 354.1004 @17.ms !!

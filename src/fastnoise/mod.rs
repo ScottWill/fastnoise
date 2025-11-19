@@ -6,4 +6,4 @@ mod utils;
 
 pub use enums::*;
 pub use fastnoise::FastNoise;
-pub use sampler::sample3d;
+pub use sampler::{sample3d, sample_plane};
