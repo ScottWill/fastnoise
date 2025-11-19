@@ -1,3 +1,4 @@
+mod builder;
 mod consts;
 mod enums;
 mod fastnoise;
