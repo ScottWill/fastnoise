@@ -3,15 +3,25 @@ use glam::Vec3;
 use std::time::Instant;
 
 fn main() {
-    let mut noise = FastNoise::seeded(1337);
-    noise.set_noise_type(NoiseType::SimplexFractal);
-    noise.set_cellular_return_type(CellularReturnType::Distance);
-    noise.set_fractal_type(FractalType::RigidMulti);
-    noise.set_interp(Interp::Quintic);
-    noise.set_fractal_octaves(5);
-    noise.set_fractal_gain(0.6);
-    noise.set_fractal_lacunarity(2.0);
-    noise.set_frequency(2.0);
+    // let mut noise = FastNoise::seeded(1337);
+    // noise.set_noise_type(NoiseType::SimplexFractal);
+    // noise.set_cellular_return_type(CellularReturnType::Distance);
+    // noise.set_fractal_type(FractalType::RigidMulti);
+    // noise.set_interp(Interp::Quintic);
+    // noise.set_fractal_octaves(5);
+    // noise.set_fractal_gain(0.6);
+    // noise.set_fractal_lacunarity(2.0);
+    // noise.set_frequency(2.0);
+
+    let builder = SimplexNoiseBuilder {
+        fractal_type: Some(FractalType::RigidMulti),
+        frequency: 2.0,
+        gain: 0.6,
+        lacunarity: 2.0,
+        octaves: 5,
+        seed: 1337,
+    };
+    let noise = builder.build();
 
     // let mut total = 0.0;
     let then = Instant::now();
