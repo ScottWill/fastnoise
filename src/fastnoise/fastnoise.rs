@@ -210,14 +210,6 @@ impl FastNoise {
         self.perm[(x as usize & 0xff) + self.perm[(y as usize & 0xff) + offset as usize] as usize]
     }
 
-    #[inline]
-    pub fn index3d_256(&self, offset: u8, pos: IVec3) -> u8 {
-        let z = (pos.z as usize & 0xFF) + offset as usize;
-        let y = (pos.y as usize & 0xFF) + self.perm[z] as usize;
-        let x = (pos.x as usize & 0xFF) + self.perm[y] as usize;
-        self.perm[x]
-    }
-
     fn val_coord_2d(&self, seed: i32, x: i32, y: i32) -> f32 {
         use std::num::Wrapping;
 
@@ -227,25 +219,13 @@ impl FastNoise {
         (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
     }
 
-    #[inline]
-    fn val_coord_3d(&self, seed: i32, pos: IVec3) -> f32 {
-        use std::num::Wrapping;
-
-        let mut n = Wrapping(seed);
-        n ^= Wrapping(X_PRIME) * Wrapping(pos.x);
-        n ^= Wrapping(Y_PRIME) * Wrapping(pos.y);
-        n ^= Wrapping(Z_PRIME) * Wrapping(pos.z);
-
-        (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
-    }
-
     fn val_coord_2d_fast(&self, offset: u8, x: i32, y: i32) -> f32 {
         VAL_LUT[self.index2d_256(offset, x, y) as usize]
     }
 
     #[inline]
     fn val_coord_3d_fast(&self, offset: u8, pos: IVec3) -> f32 {
-        VAL_LUT[self.index3d_256(offset, pos) as usize]
+        VAL_LUT[index3d_256(&self.perm, offset, pos) as usize]
     }
 
     fn grad_coord_2d(&self, offset: u8, x: i32, y: i32, xd: f32, yd: f32) -> f32 {
@@ -344,7 +324,7 @@ impl FastNoise {
             pos.y.to_bits() as i32,
             pos.z.to_bits() as i32,
         );
-        self.val_coord_3d(self.seed as i32, c ^ (c >> 16))
+        val_coord_3d(self.seed as i32, c ^ (c >> 16))
     }
 
     fn get_white_noise(&self, x: f32, y: f32) -> f32 {
@@ -1204,7 +1184,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = (vec * vec).element_sum();
@@ -1221,7 +1201,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum();
@@ -1238,7 +1218,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();
@@ -1253,7 +1233,7 @@ impl FastNoise {
         }
 
         match self.cellular_return_type {
-            CellularReturnType::CellValue => self.val_coord_3d(self.seed as i32, c),
+            CellularReturnType::CellValue => val_coord_3d(self.seed as i32, c),
             CellularReturnType::Distance => distance,
             _ => 0.0,
         }
@@ -1270,7 +1250,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = (vec * vec).element_sum();
@@ -1289,7 +1269,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum();
@@ -1308,7 +1288,7 @@ impl FastNoise {
                     for yi in yr - 1..yr + 2 {
                         for zi in zr - 1..zr + 2 {
                             let i = ivec3(xi, yi, zi);
-                            let lut_pos: u8 = self.index3d_256(0, i);
+                            let lut_pos: u8 = index3d_256(&self.perm, 0, i);
                             let cell = CELL_3D[lut_pos as usize];
                             let vec = i.as_vec3a() - pos + cell * self.cellular_jitter;
                             let new_distance = vec.abs().element_sum() + (vec * vec).element_sum();

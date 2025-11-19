@@ -1,17 +1,20 @@
 use super::*;
 
 pub struct FastNoiseBuilder {
-    seed: u64,
+    cellular_distance_function: Option<CellularDistanceFunction>,
+    cellular_distance_index: Option<(i32, i32)>,
+    cellular_jitter: Option<f32>,
+    cellular_return_type: Option<CellularReturnType>,
+    fractal_type: Option<FractalType>,
     frequency: f32,
-    interp: Interp,
+    gain: Option<f32>,
+    interp: Option<Interp>,
+    lacunarity: Option<f32>,
     noise_type: NoiseType,
-    octaves: i32,
-    lacunarity: f32,
-    gain: f32,
-    fractal_type: FractalType,
-    cellular_distance_function: CellularDistanceFunction,
-    cellular_return_type: CellularReturnType,
-    cellular_distance_index: (i32, i32),
-    cellular_jitter: f32,
-    gradient_perturb_amp: f32,
+    octaves: Option<i32>,
+    seed: u64,
+}
+
+impl FastNoiseBuilder {
+
 }
