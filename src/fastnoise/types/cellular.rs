@@ -10,40 +10,12 @@ use crate::{
 
 #[derive(Clone, Copy, Default)]
 pub struct CellularNoiseBuilder {
-    cellular_distance_function: CellularDistanceFunction,
-    cellular_distance_index: (i32, i32),
-    cellular_jitter: f32,
-    cellular_return_type: CellularReturnType,
-    frequency: f32,
-    seed: u64,
-}
-
-impl CellularNoiseBuilder {
-
-    pub fn cellular_distance_function(mut self, cellular_distance_function: CellularDistanceFunction) -> Self {
-        self.cellular_distance_function = cellular_distance_function;
-        self
-    }
-    pub fn cellular_distance_index(mut self, a: i32, b: i32) -> Self {
-        self.cellular_distance_index = (a, b);
-        self
-    }
-    pub fn cellular_jitter(mut self, cellular_jitter: f32) -> Self {
-        self.cellular_jitter = cellular_jitter;
-        self
-    }
-    pub fn cellular_return_type(mut self, cellular_return_type: CellularReturnType) -> Self {
-        self.cellular_return_type = cellular_return_type;
-        self
-    }
-    pub fn frequency(mut self, frequency: f32) -> Self {
-        self.frequency = frequency;
-        self
-    }
-    pub fn seed(mut self, seed: u64) -> Self {
-        self.seed = seed;
-        self
-    }
+    pub cellular_distance_function: CellularDistanceFunction,
+    pub cellular_distance_index: (i32, i32),
+    pub cellular_jitter: f32,
+    pub cellular_return_type: CellularReturnType,
+    pub frequency: f32,
+    pub seed: u64,
 }
 
 impl Builder for CellularNoiseBuilder {
@@ -66,8 +38,6 @@ impl Builder for CellularNoiseBuilder {
             seed: self.seed as i32,
         }
     }
-
-
 }
 
 #[derive(Clone, Copy)]

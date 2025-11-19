@@ -1,16 +1,41 @@
 use glam::{Vec3A, ivec3};
 
-use crate::{FractalType, fastnoise::{Sampler, consts::CUBIC_3D_BOUNDING, utils::{cubic_lerp, val_coord_3d_fast}}};
+use crate::{Builder, FractalType, fastnoise::{Sampler, consts::CUBIC_3D_BOUNDING, utils::{cubic_lerp, fractal_bounding, permutate, val_coord_3d_fast}}};
 
+#[derive(Clone, Copy, Debug)]
+pub struct CubicNoiseBuilder {
+    pub fractal_type: Option<FractalType>,
+    pub frequency: f32,
+    pub gain: f32,
+    pub lacunarity: f32,
+    pub octaves: u16,
+    pub seed: u64,
+}
+
+impl Builder for CubicNoiseBuilder {
+    type Output = CubicNoise;
+    fn build(self) -> Self::Output {
+        Self::Output {
+            fractal_bounding: fractal_bounding(self.gain, self.octaves),
+            fractal_type: self.fractal_type,
+            frequency: self.frequency,
+            gain: self.gain,
+            lacunarity: self.lacunarity,
+            octaves: self.octaves as usize,
+            perm: permutate(self.seed)[0],
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct CubicNoise {
     fractal_bounding: f32,
     fractal_type: Option<FractalType>,
     frequency: f32,
     gain: f32,
     lacunarity: f32,
-    octaves: i32,
-    perm: [u8; 256],
-    seed: f32,
+    octaves: usize,
+    perm: [u8; 512],
 }
 
 impl Sampler for CubicNoise {
@@ -35,7 +60,7 @@ impl CubicNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_cubic3d(self.perm[i as usize], pos) * amp;
+            sum += self.single_cubic3d(self.perm[i], pos) * amp;
             i += 1;
         }
 
@@ -49,7 +74,7 @@ impl CubicNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_cubic3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.single_cubic3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
@@ -63,7 +88,7 @@ impl CubicNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_cubic3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_cubic3d(self.perm[i], pos).abs()) * amp;
             i += 1;
         }
 

@@ -1,14 +1,42 @@
 use glam::{Vec3A, ivec3, vec3a, vec4};
 
 use crate::{
-    FractalType,
-    Interp,
-    fastnoise::{
+    Builder, FractalType, Interp, fastnoise::{
         Sampler,
-        utils::{grad_coord_3d, interp_hermite_func_vec, interp_quintic_func_vec, lerp},
-    },
+        utils::{fractal_bounding, grad_coord_3d, interp_hermite_func_vec, interp_quintic_func_vec, lerp, permutate},
+    }
 };
 
+#[derive(Clone, Copy, Default)]
+pub struct PerlinNoiseBuilder {
+    pub fractal_type: Option<FractalType>,
+    pub frequency: f32,
+    pub gain: f32,
+    pub interp: Interp,
+    pub lacunarity: f32,
+    pub octaves: u16,
+    pub seed: u64,
+}
+
+impl Builder for PerlinNoiseBuilder {
+    type Output = PerlinNoise;
+    fn build(self) -> Self::Output {
+        let [perm, perm12] = permutate(self.seed);
+        Self::Output {
+            fractal_bounding: fractal_bounding(self.gain, self.octaves),
+            fractal_type: self.fractal_type,
+            frequency: self.frequency,
+            gain: self.gain,
+            interp: self.interp,
+            lacunarity: self.lacunarity,
+            octaves: self.octaves as usize,
+            perm,
+            perm12,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct PerlinNoise {
     fractal_bounding: f32,
     fractal_type: Option<FractalType>,
@@ -16,10 +44,9 @@ pub struct PerlinNoise {
     gain: f32,
     interp: Interp,
     lacunarity: f32,
-    octaves: i32,
-    perm: [u8; 256],
-    perm12: [u8; 256],
-    seed: f32,
+    octaves: usize,
+    perm: [u8; 512],
+    perm12: [u8; 512],
 }
 
 impl Sampler for PerlinNoise {
@@ -45,7 +72,7 @@ impl PerlinNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d(self.perm[i as usize], pos) * amp;
+            sum += self.single_perlin3d(self.perm[i], pos) * amp;
             i += 1;
         }
 
@@ -60,7 +87,7 @@ impl PerlinNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.single_perlin3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
@@ -75,7 +102,7 @@ impl PerlinNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_perlin3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_perlin3d(self.perm[i], pos).abs()) * amp;
             i += 1;
         }
 

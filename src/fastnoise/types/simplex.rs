@@ -1,24 +1,50 @@
-use glam::Vec3A;
+use glam::{Vec3A, vec4};
 
 use crate::{
-    FractalType,
-    fastnoise::{
+    Builder, FractalType, fastnoise::{
         Sampler,
         consts::{F3, G3, V3A_001, V3A_010, V3A_011, V3A_100, V3A_101, V3A_110},
-        utils::grad_coord_3d,
-    },
+        utils::{fractal_bounding, grad_coord_3d, permutate},
+    }
 };
 
+#[derive(Clone, Copy, Default)]
+pub struct SimplexNoiseBuilder {
+    pub fractal_type: Option<FractalType>,
+    pub frequency: f32,
+    pub gain: f32,
+    pub lacunarity: f32,
+    pub octaves: u16,
+    pub seed: u64,
+}
+
+impl Builder for SimplexNoiseBuilder {
+    type Output = SimplexNoise;
+    fn build(self) -> Self::Output {
+        let [perm, perm12] = permutate(self.seed);
+        Self::Output {
+            fractal_bounding: fractal_bounding(self.gain, self.octaves),
+            fractal_type: self.fractal_type,
+            frequency: self.frequency,
+            gain: self.gain,
+            lacunarity: self.lacunarity,
+            octaves: self.octaves as usize,
+            perm,
+            perm12,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct SimplexNoise {
     fractal_bounding: f32,
     fractal_type: Option<FractalType>,
     frequency: f32,
     gain: f32,
     lacunarity: f32,
-    octaves: i32,
-    perm: [u8; 256],
-    perm12: [u8; 256],
-    seed: f32,
+    octaves: usize,
+    perm: [u8; 512],
+    perm12: [u8; 512],
 }
 
 impl Sampler for SimplexNoise {
@@ -44,7 +70,7 @@ impl SimplexNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_simplex3d(self.perm[i as usize], pos) * amp;
+            sum += self.single_simplex3d(self.perm[i], pos) * amp;
             i += 1;
         }
 
@@ -59,7 +85,7 @@ impl SimplexNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += amp * self.single_simplex3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0);
+            sum += amp * self.single_simplex3d(self.perm[i], pos).abs().mul_add(2.0, -1.0);
             i += 1;
         }
 
@@ -74,7 +100,7 @@ impl SimplexNoise {
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_simplex3d(self.perm[i as usize], pos).abs()) * amp;
+            sum += -(1.0 - self.single_simplex3d(self.perm[i], pos).abs()) * amp;
             i += 1;
         }
 
@@ -152,6 +178,6 @@ impl SimplexNoise {
             }
         };
 
-        32.0 * (n0 + n1 + n2 + n3)
+        32.0 * vec4(n0, n1, n2, n3).element_sum()
     }
 }

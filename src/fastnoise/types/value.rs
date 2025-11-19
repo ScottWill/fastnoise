@@ -18,37 +18,6 @@ pub struct ValueNoiseBuilder {
     pub seed: u64,
 }
 
-impl ValueNoiseBuilder {
-    pub fn fractal_type(mut self, fractal_type: Option<FractalType>) -> Self {
-        self.fractal_type = fractal_type;
-        self
-    }
-    pub fn frequency(mut self, frequency: f32) -> Self {
-        self.frequency = frequency;
-        self
-    }
-    pub fn gain(mut self, gain: f32) -> Self {
-        self.gain = gain;
-        self
-    }
-    pub fn interp(mut self, interp: Interp) -> Self {
-        self.interp = interp;
-        self
-    }
-    pub fn lacunarity(mut self, lacunarity: f32) -> Self {
-        self.lacunarity = lacunarity;
-        self
-    }
-    pub fn octaves(mut self, octaves: u16) -> Self {
-        self.octaves = octaves;
-        self
-    }
-    pub fn seed(mut self, seed: u64) -> Self {
-        self.seed = seed;
-        self
-    }
-}
-
 impl Builder for ValueNoiseBuilder {
     type Output = ValueNoise;
     fn build(self) -> Self::Output {
