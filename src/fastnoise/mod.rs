@@ -15,6 +15,7 @@ pub trait Sampler {
 }
 
 pub use enums::*;
+#[allow(deprecated)]
 pub use fastnoise::FastNoise;
 pub use sampler::{sample3d, sample_plane};
 pub use types::cellular::{CellularNoise, CellularNoiseBuilder};

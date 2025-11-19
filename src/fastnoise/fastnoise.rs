@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 // A port of Auburn's FastNoise to Rust.
 // I really didn't like the noise libraries I could find, so I ported the one I like.
 // Original code: https://github.com/Auburns/FastNoise
@@ -13,6 +14,7 @@ use std::{f32, fmt::Debug};
 use super::{consts::*, enums::*, utils::*};
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[deprecated(since="0.3.0",note="use builders instead")]
 pub struct FastNoise {
     seed: u64,
     frequency: f32,
