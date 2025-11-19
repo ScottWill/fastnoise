@@ -1,4 +1,9 @@
+use std::array;
+
 use glam::{IVec3, Vec3A, ivec3};
+use rand::Rng as _;
+use rand_pcg::Pcg64;
+use rand_seeder::Seeder;
 
 use crate::{
     CellularDistanceFunction,
@@ -10,14 +15,85 @@ use crate::{
     },
 };
 
+#[derive(Clone, Copy)]
+pub struct CellularNoiseBuilder {
+    cellular_distance_function: CellularDistanceFunction,
+    cellular_distance_index: (i32, i32),
+    cellular_jitter: f32,
+    cellular_return_type: CellularReturnType,
+    frequency: f32,
+    seed: u64,
+}
+
+impl CellularNoiseBuilder {
+
+    pub fn cellular_distance_function(mut self, cellular_distance_function: CellularDistanceFunction) -> Self {
+        self.cellular_distance_function = cellular_distance_function;
+        self
+    }
+    pub fn cellular_distance_index(mut self, a: i32, b: i32) -> Self {
+        self.cellular_distance_index = (a, b);
+        self
+    }
+    pub fn cellular_jitter(mut self, cellular_jitter: f32) -> Self {
+        self.cellular_jitter = cellular_jitter;
+        self
+    }
+    pub fn cellular_return_type(mut self, cellular_return_type: CellularReturnType) -> Self {
+        self.cellular_return_type = cellular_return_type;
+        self
+    }
+    pub fn frequency(mut self, frequency: f32) -> Self {
+        self.frequency = frequency;
+        self
+    }
+    pub fn seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
+
+    pub fn build(self) -> CellularNoise {
+
+        let cellular_distance_index = {
+            let (a, b) = self.cellular_distance_index;
+            (
+                a.min(b).clamp(0, FN_CELLULAR_INDEX_MAX as i32),
+                a.max(b).clamp(0, FN_CELLULAR_INDEX_MAX as i32),
+            )
+        };
+
+        let mut perm: [u8; 512] = array::from_fn(|i| i as u8);
+        let mut rng: Pcg64 = Seeder::from(self.seed).into_rng();
+        for j in 0..256 {
+            let rng = rng.random::<u64>() % (256 - j);
+            let k = rng + j;
+            let l = perm[j as usize];
+            perm[j as usize] = perm[k as usize];
+            perm[j as usize + 256] = perm[k as usize];
+            perm[k as usize] = l;
+        }
+
+        CellularNoise {
+            cellular_distance_function: self.cellular_distance_function,
+            cellular_distance_index: cellular_distance_index,
+            cellular_jitter: self.cellular_jitter,
+            cellular_return_type: self.cellular_return_type,
+            frequency: self.frequency,
+            seed: self.seed as i32,
+            perm,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct CellularNoise {
     cellular_distance_function: CellularDistanceFunction,
     cellular_distance_index: (i32, i32),
     cellular_jitter: f32,
     cellular_return_type: CellularReturnType,
     frequency: f32,
-    perm: [u8; 256],
-    seed: f32,
+    perm: [u8; 512],
+    seed: i32,
 }
 
 impl Sampler for CellularNoise {
@@ -92,7 +168,7 @@ impl CellularNoise {
         }
 
         match self.cellular_return_type {
-            CellularReturnType::CellValue => val_coord_3d(self.seed as i32, c),
+            CellularReturnType::CellValue => val_coord_3d(self.seed, c),
             CellularReturnType::Distance => distance,
             _ => 0.0,
         }
