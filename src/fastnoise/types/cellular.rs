@@ -1,21 +1,14 @@
-use std::array;
-
 use glam::{IVec3, Vec3A, ivec3};
-use rand::Rng as _;
-use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
 
 use crate::{
-    CellularDistanceFunction,
-    CellularReturnType,
-    fastnoise::{
+    Builder, CellularDistanceFunction, CellularReturnType, fastnoise::{
         Sampler,
         consts::{CELL_3D, FN_CELLULAR_INDEX_MAX},
-        utils::{index3d_256, val_coord_3d},
-    },
+        utils::{index3d_256, permutate, val_coord_3d},
+    }
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct CellularNoiseBuilder {
     cellular_distance_function: CellularDistanceFunction,
     cellular_distance_index: (i32, i32),
@@ -51,9 +44,11 @@ impl CellularNoiseBuilder {
         self.seed = seed;
         self
     }
+}
 
-    pub fn build(self) -> CellularNoise {
-
+impl Builder for CellularNoiseBuilder {
+    type Output = CellularNoise;
+    fn build(self) -> Self::Output {
         let cellular_distance_index = {
             let (a, b) = self.cellular_distance_index;
             (
@@ -61,28 +56,18 @@ impl CellularNoiseBuilder {
                 a.max(b).clamp(0, FN_CELLULAR_INDEX_MAX as i32),
             )
         };
-
-        let mut perm: [u8; 512] = array::from_fn(|i| i as u8);
-        let mut rng: Pcg64 = Seeder::from(self.seed).into_rng();
-        for j in 0..256 {
-            let rng = rng.random::<u64>() % (256 - j);
-            let k = rng + j;
-            let l = perm[j as usize];
-            perm[j as usize] = perm[k as usize];
-            perm[j as usize + 256] = perm[k as usize];
-            perm[k as usize] = l;
-        }
-
-        CellularNoise {
+        Self::Output {
             cellular_distance_function: self.cellular_distance_function,
             cellular_distance_index: cellular_distance_index,
             cellular_jitter: self.cellular_jitter,
             cellular_return_type: self.cellular_return_type,
             frequency: self.frequency,
+            perm: permutate(self.seed)[0],
             seed: self.seed as i32,
-            perm,
         }
     }
+
+
 }
 
 #[derive(Clone, Copy)]

@@ -1,14 +1,71 @@
 use glam::{Vec3A, ivec3, vec4};
 
 use crate::{
-    FractalType,
-    Interp,
-    fastnoise::{
+    Builder, FractalType, Interp, fastnoise::{
         Sampler,
-        utils::{interp_hermite_func_vec, interp_quintic_func_vec, lerp, val_coord_3d_fast},
-    },
+        utils::{fractal_bounding, interp_hermite_func_vec, interp_quintic_func_vec, lerp, permutate, val_coord_3d_fast},
+    }
 };
 
+#[derive(Clone, Copy, Default)]
+pub struct ValueNoiseBuilder {
+    pub fractal_type: Option<FractalType>,
+    pub frequency: f32,
+    pub gain: f32,
+    pub interp: Interp,
+    pub lacunarity: f32,
+    pub octaves: u16,
+    pub seed: u64,
+}
+
+impl ValueNoiseBuilder {
+    pub fn fractal_type(mut self, fractal_type: Option<FractalType>) -> Self {
+        self.fractal_type = fractal_type;
+        self
+    }
+    pub fn frequency(mut self, frequency: f32) -> Self {
+        self.frequency = frequency;
+        self
+    }
+    pub fn gain(mut self, gain: f32) -> Self {
+        self.gain = gain;
+        self
+    }
+    pub fn interp(mut self, interp: Interp) -> Self {
+        self.interp = interp;
+        self
+    }
+    pub fn lacunarity(mut self, lacunarity: f32) -> Self {
+        self.lacunarity = lacunarity;
+        self
+    }
+    pub fn octaves(mut self, octaves: u16) -> Self {
+        self.octaves = octaves;
+        self
+    }
+    pub fn seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
+}
+
+impl Builder for ValueNoiseBuilder {
+    type Output = ValueNoise;
+    fn build(self) -> Self::Output {
+        Self::Output {
+            fractal_bounding: fractal_bounding(self.gain, self.octaves),
+            fractal_type: self.fractal_type,
+            frequency: self.frequency,
+            gain: self.gain,
+            interp: self.interp,
+            lacunarity: self.lacunarity,
+            octaves: self.octaves as usize,
+            perm: permutate(self.seed)[0],
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ValueNoise {
     fractal_bounding: f32,
     fractal_type: Option<FractalType>,
@@ -16,9 +73,8 @@ pub struct ValueNoise {
     gain: f32,
     interp: Interp,
     lacunarity: f32,
-    octaves: i32,
-    perm: [u8; 256],
-    seed: f32,
+    octaves: usize,
+    perm: [u8; 512],
 }
 
 impl Sampler for ValueNoise {
@@ -37,47 +93,41 @@ impl Sampler for ValueNoise {
 
 impl ValueNoise {
     fn single_value_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_value3d(self.perm[0], pos);
+        let mut sum = self.single_value3d(self.perm[0], pos);
         let mut amp = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_value3d(self.perm[i as usize], pos) * amp;
-
-            i += 1;
+            sum += self.single_value3d(self.perm[i], pos) * amp;
         }
 
         sum * self.fractal_bounding
     }
 
     fn single_value_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_value3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
-        let mut amp: f32 = 1.0;
-        let mut i: i32 = 1;
+        let mut sum = self.single_value3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp = 1.0;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_value3d(self.perm[i as usize], pos).abs().mul_add(2.0, -1.0) * amp;
-            i += 1;
+            sum += self.single_value3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
         }
 
         sum * self.fractal_bounding
     }
 
     fn single_value_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = 1.0 - self.single_value3d(self.perm[0], pos).abs();
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
+        let mut sum= 1.0 - self.single_value3d(self.perm[0], pos).abs();
+        let mut amp = 1.0;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_value3d(self.perm[i as usize], pos).abs()) * amp;
-            i += 1;
+            sum -= (1.0 - self.single_value3d(self.perm[i], pos).abs()) * amp;
         }
+
         sum
     }
 
