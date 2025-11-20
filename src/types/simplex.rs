@@ -41,6 +41,12 @@ pub struct SimplexNoise {
     perm12: [u8; 512],
 }
 
+impl From<SimplexNoiseBuilder> for SimplexNoise {
+    fn from(value: SimplexNoiseBuilder) -> Self {
+        value.build()
+    }
+}
+
 impl Sampler for SimplexNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;

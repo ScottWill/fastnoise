@@ -1,4 +1,4 @@
-use glam::{Vec3A, ivec3, vec3a, vec4};
+use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
 
 use crate::{Builder, FractalType, Interp, Sampler, utils::*};
 
@@ -44,22 +44,40 @@ pub struct PerlinNoise {
     perm12: [u8; 512],
 }
 
+impl From<PerlinNoiseBuilder> for PerlinNoise {
+    fn from(value: PerlinNoiseBuilder) -> Self {
+        value.build()
+    }
+}
+
 impl Sampler for PerlinNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
         match self.fractal_type {
             Some(fractal) => match fractal {
-                FractalType::FBM => self.single_perlin_fractal_fbm3d(pos),
-                FractalType::Billow => self.single_perlin_fractal_billow3d(pos),
-                FractalType::RigidMulti => self.single_perlin_fractal_rigid_multi3d(pos),
+                FractalType::FBM => self.fbm3d(pos),
+                FractalType::Billow => self.billow3d(pos),
+                FractalType::RigidMulti => self.rigid_multi3d(pos),
             },
             None => self.single_perlin3d(0, pos),
+        }
+    }
+
+    fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
+        let pos = position.into() * self.frequency;
+        match self.fractal_type {
+            Some(fractal) => match fractal {
+                FractalType::FBM => self.fbm(pos),
+                FractalType::Billow => self.billow(pos),
+                FractalType::RigidMulti => self.rigid_multi(pos),
+            },
+            None => self.single_perlin(0, pos),
         }
     }
 }
 
 impl PerlinNoise {
-    fn single_perlin_fractal_fbm3d(&self, mut pos: Vec3A) -> f32 {
+    fn fbm3d(&self, mut pos: Vec3A) -> f32 {
         let mut sum: f32 = self.single_perlin3d(self.perm[0], pos);
         let mut amp: f32 = 1.0;
         let mut i = 1;
@@ -74,7 +92,7 @@ impl PerlinNoise {
         sum * self.fractal_bounding
     }
 
-    fn single_perlin_fractal_billow3d(&self, mut pos: Vec3A) -> f32 {
+    fn billow3d(&self, mut pos: Vec3A) -> f32 {
         let mut sum: f32 = self.single_perlin3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
         let mut i = 1;
@@ -89,7 +107,7 @@ impl PerlinNoise {
         sum * self.fractal_bounding
     }
 
-    fn single_perlin_fractal_rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
+    fn rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
         let mut sum: f32 = 1.0 - self.single_perlin3d(self.perm[0], pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
@@ -108,8 +126,8 @@ impl PerlinNoise {
         let p0 = pos.floor();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
-            Interp::Hermite => interp_hermite_func_vec(pos - p0),
-            Interp::Quintic => interp_quintic_func_vec(pos - p0),
+            Interp::Hermite => interp_hermite_func_vec3(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec3(pos - p0),
         };
 
         let d0 = pos - p0;
@@ -131,10 +149,84 @@ impl PerlinNoise {
             grad_coord_3d(&self.perm, &self.perm12, offset, ivec3(p1.x, p1.y, p1.z), d1),
         );
 
-        let qf = q0.lerp(q1, ps.x);
-        let yf0 = lerp(qf.x, qf.y, ps.y);
-        let yf1 = lerp(qf.z, qf.w, ps.y);
+        let qf0 = q0.lerp(q1, ps.x);
+        let qf1 = qf0.xz().lerp(qf0.yw(), ps.y);
 
-        lerp(yf0, yf1, ps.z)
+        lerp(qf1.x, qf1.y, ps.z)
+
+    }
+
+    fn fbm(&self, mut pos: Vec2) -> f32 {
+        let mut sum: f32 = self.single_perlin(self.perm[0], pos);
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_perlin(self.perm[i], pos) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
+    fn billow(&self, mut pos: Vec2) -> f32 {
+        let mut sum: f32 = self.single_perlin(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += self.single_perlin(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
+            i += 1;
+        }
+
+        sum * self.fractal_bounding
+    }
+
+    fn rigid_multi(&self, mut pos: Vec2) -> f32 {
+        let mut sum: f32 = 1.0 - self.single_perlin(self.perm[0], pos).abs();
+        let mut amp: f32 = 1.0;
+        let mut i = 1;
+
+        while i < self.octaves {
+            pos *= self.lacunarity;
+            amp *= self.gain;
+            sum += -(1.0 - self.single_perlin(self.perm[i], pos).abs()) * amp;
+            i += 1;
+        }
+
+        sum
+    }
+
+    fn single_perlin(&self, offset: u8, pos: Vec2) -> f32 {
+        let p0 = pos.floor();
+
+        let ps = match self.interp {
+            Interp::Linear => pos - p0,
+            Interp::Hermite => interp_hermite_func_vec2(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec2(pos - p0),
+        };
+
+        let d0 = pos - p0;
+        let d1 = d0 - 1.0;
+
+        let p0 = p0.as_ivec2();
+        let p1 = p0 + 1;
+
+        let xf0 = vec2(
+            grad_coord_2d(&self.perm, &self.perm12, offset, p0, d0),
+            grad_coord_2d(&self.perm, &self.perm12, offset, ivec2(p0.x, p1.y), vec2(d0.x, d1.y)),
+        );
+        let xf1 = vec2(
+            grad_coord_2d(&self.perm, &self.perm12, offset, ivec2(p1.x, p0.y), vec2(d1.x, d0.y)),
+            grad_coord_2d(&self.perm, &self.perm12, offset, p1, d1),
+        );
+        let xff = xf0.lerp(xf1, ps.x);
+
+        lerp(xff.x, xff.y, ps.y)
+
     }
 }

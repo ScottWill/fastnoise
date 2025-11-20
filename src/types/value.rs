@@ -41,6 +41,12 @@ pub struct ValueNoise {
     perm: [u8; 512],
 }
 
+impl From<ValueNoiseBuilder> for ValueNoise {
+    fn from(value: ValueNoiseBuilder) -> Self {
+        value.build()
+    }
+}
+
 impl Sampler for ValueNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
@@ -100,8 +106,8 @@ impl ValueNoise {
         let p1 = (p0 + 1.0).as_ivec3();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
-            Interp::Hermite => interp_hermite_func_vec(pos - p0),
-            Interp::Quintic => interp_quintic_func_vec(pos - p0),
+            Interp::Hermite => interp_hermite_func_vec3(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec3(pos - p0),
         };
 
         let p0 = p0.as_ivec3();

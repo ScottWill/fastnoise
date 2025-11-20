@@ -2,6 +2,7 @@ mod consts;
 mod enums;
 mod fastnoise;
 mod mixer;
+mod sampler;
 mod types;
 mod utils;
 
@@ -12,13 +13,13 @@ pub trait Builder {
 
 pub trait Sampler {
     fn sample3d<P>(&self, position: P) -> f32 where P: Into<glam::Vec3A>;
-    fn sample<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
-        let pos = position.into();
-        self.sample3d(glam::vec3a(pos.x, pos.y, 0.0))
+    fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
+        self.sample3d(position.into().extend(0.0))
     }
 }
 
-pub use enums::*;
+pub use enums::{CellularDistanceFunction, CellularReturnType, FractalType, Interp, NoiseType};
+pub use sampler::{sample_cube, sample_plane, sample3d};
 pub use types::cellular::{CellularNoise, CellularNoiseBuilder};
 pub use types::cubic::{CubicNoise, CubicNoiseBuilder};
 pub use types::perlin::{PerlinNoise, PerlinNoiseBuilder};
@@ -28,7 +29,3 @@ pub use types::white::{WhiteNoise, WhiteNoiseBuilder};
 
 #[allow(deprecated)]
 pub use fastnoise::FastNoise;
-
-#[cfg(feature="sampler")]
-pub mod sampler;
-

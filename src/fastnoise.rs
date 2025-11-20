@@ -387,8 +387,8 @@ impl FastNoise {
         let p1 = (p0 + 1.0).as_ivec3();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
-            Interp::Hermite => interp_hermite_func_vec(pos - p0),
-            Interp::Quintic => interp_quintic_func_vec(pos - p0),
+            Interp::Hermite => interp_hermite_func_vec3(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec3(pos - p0),
         };
 
         let p0 = p0.as_ivec3();
@@ -549,8 +549,8 @@ impl FastNoise {
         let p0 = pos.floor();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
-            Interp::Hermite => interp_hermite_func_vec(pos - p0),
-            Interp::Quintic => interp_quintic_func_vec(pos - p0),
+            Interp::Hermite => interp_hermite_func_vec3(pos - p0),
+            Interp::Quintic => interp_quintic_func_vec3(pos - p0),
         };
 
         let d0 = pos - p0;
@@ -1307,23 +1307,23 @@ impl FastNoise {
         }
 
         match self.cellular_return_type {
-            CellularReturnType::Distance2 => distance[self.cellular_distance_index.1 as usize],
-            CellularReturnType::Distance2Add => {
-                distance[self.cellular_distance_index.1 as usize]
-                    + distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Sub => {
-                distance[self.cellular_distance_index.1 as usize]
-                    - distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Mul => {
-                distance[self.cellular_distance_index.1 as usize]
-                    * distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Div => {
-                distance[self.cellular_distance_index.0 as usize]
-                    / distance[self.cellular_distance_index.1 as usize]
-            }
+            // CellularReturnType::Distance2 => distance[self.cellular_distance_index.1 as usize],
+            // CellularReturnType::Distance2Add => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         + distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Sub => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         - distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Mul => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         * distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Div => {
+            //     distance[self.cellular_distance_index.0 as usize]
+            //         / distance[self.cellular_distance_index.1 as usize]
+            // }
             _ => 0.0,
         }
     }
@@ -1478,23 +1478,23 @@ impl FastNoise {
         }
 
         match self.cellular_return_type {
-            CellularReturnType::Distance2 => distance[self.cellular_distance_index.0 as usize],
-            CellularReturnType::Distance2Add => {
-                distance[self.cellular_distance_index.1 as usize]
-                    + distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Sub => {
-                distance[self.cellular_distance_index.1 as usize]
-                    - distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Mul => {
-                distance[self.cellular_distance_index.1 as usize]
-                    * distance[self.cellular_distance_index.0 as usize]
-            }
-            CellularReturnType::Distance2Div => {
-                distance[self.cellular_distance_index.0 as usize]
-                    / distance[self.cellular_distance_index.1 as usize]
-            }
+            // CellularReturnType::Distance2 => distance[self.cellular_distance_index.0 as usize],
+            // CellularReturnType::Distance2Add => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         + distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Sub => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         - distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Mul => {
+            //     distance[self.cellular_distance_index.1 as usize]
+            //         * distance[self.cellular_distance_index.0 as usize]
+            // }
+            // CellularReturnType::Distance2Div => {
+            //     distance[self.cellular_distance_index.0 as usize]
+            //         / distance[self.cellular_distance_index.1 as usize]
+            // }
             _ => 0.0,
         }
     }

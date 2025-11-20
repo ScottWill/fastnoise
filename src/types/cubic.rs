@@ -38,6 +38,12 @@ pub struct CubicNoise {
     perm: [u8; 512],
 }
 
+impl From<CubicNoiseBuilder> for CubicNoise {
+    fn from(value: CubicNoiseBuilder) -> Self {
+        value.build()
+    }
+}
+
 impl Sampler for CubicNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
