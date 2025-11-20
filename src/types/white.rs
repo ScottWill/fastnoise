@@ -1,6 +1,6 @@
 use glam::{Vec3A, ivec3};
 
-use crate::{Builder, fastnoise::{Sampler, utils::val_coord_3d}};
+use crate::{Builder, Sampler, utils::val_coord_3d};
 
 #[derive(Clone, Copy, Default)]
 pub struct WhiteNoiseBuilder {

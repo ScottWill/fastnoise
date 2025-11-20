@@ -1,12 +1,6 @@
 use glam::{IVec3, Vec3A, ivec3};
 
-use crate::{
-    Builder, CellularDistanceFunction, CellularReturnType, fastnoise::{
-        Sampler,
-        consts::{CELL_3D, FN_CELLULAR_INDEX_MAX},
-        utils::{index3d_256, permutate, val_coord_3d},
-    }
-};
+use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct CellularNoiseBuilder {

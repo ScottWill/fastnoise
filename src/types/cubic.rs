@@ -1,6 +1,6 @@
 use glam::{Vec3A, ivec3};
 
-use crate::{Builder, FractalType, fastnoise::{Sampler, consts::CUBIC_3D_BOUNDING, utils::{cubic_lerp, fractal_bounding, permutate, val_coord_3d_fast}}};
+use crate::{Builder, FractalType, Sampler, consts::CUBIC_3D_BOUNDING, utils::*};
 
 #[derive(Clone, Copy, Debug)]
 pub struct CubicNoiseBuilder {

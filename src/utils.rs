@@ -83,7 +83,7 @@ pub(super) fn val_coord_3d(seed: i32, pos: IVec3) -> f32 {
     n ^= Wrapping(Y_PRIME) * Wrapping(pos.y);
     n ^= Wrapping(Z_PRIME) * Wrapping(pos.z);
 
-    (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
+    (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483600.0
 }
 
 #[inline]

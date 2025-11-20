@@ -1,11 +1,6 @@
 use glam::{Vec3A, ivec3, vec3a, vec4};
 
-use crate::{
-    Builder, FractalType, Interp, fastnoise::{
-        Sampler,
-        utils::{fractal_bounding, grad_coord_3d, interp_hermite_func_vec, interp_quintic_func_vec, lerp, permutate},
-    }
-};
+use crate::{Builder, FractalType, Interp, Sampler, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct PerlinNoiseBuilder {
