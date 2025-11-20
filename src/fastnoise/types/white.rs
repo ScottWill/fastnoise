@@ -31,6 +31,7 @@ impl Sampler for WhiteNoise {
 }
 
 impl WhiteNoise {
+    #[inline]
     fn get_white_noise3d(&self, mut pos: Vec3A) -> f32 {
         pos *= self.frequency;
         let c = ivec3(
@@ -38,6 +39,6 @@ impl WhiteNoise {
             pos.y.to_bits() as i32,
             pos.z.to_bits() as i32,
         );
-        val_coord_3d(self.seed, c ^ (c >> 16))
+        val_coord_3d(self.seed, c ^ c >> 16)
     }
 }

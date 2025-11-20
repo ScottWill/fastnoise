@@ -97,21 +97,20 @@ pub(super) fn index3d_256(perm: &[u8], offset: u8, pos: IVec3) -> u8 {
 }
 
 pub(super) fn permutate(seed: u64) -> [[u8; 512]; 2] {
-    use rand::Rng as _;
     use rand_pcg::Pcg64;
-    use rand_seeder::Seeder;
-    let mut rng: Pcg64 = Seeder::from(seed).into_rng();
-    let mut perm: [u8; 512] = std::array::from_fn(|i| i as u8);
+    let mut rng: Pcg64 = rand_seeder::Seeder::from(seed).into_rng();
+    let mut perm: [u8; 512] = std::array::from_fn(|i| i as _);
     let mut perm12: [u8; 512] = [0; 512];
     for j in 0..256 {
-        let rng = rng.random::<u64>() % (256 - j);
+        let rng = rand::Rng::random::<u64>(&mut rng) % (256 - j);
         let k = rng + j;
-        let l = perm[j as usize];
-        perm[j as usize] = perm[k as usize];
-        perm[j as usize + 256] = perm[k as usize];
-        perm[k as usize] = l;
-        perm12[j as usize] = perm[j as usize] % 12;
-        perm12[j as usize + 256] = perm[j as usize] % 12;
+        let pk = perm[k as usize];
+        let pk12 = pk % 12;
+        perm[k as usize] = perm[j as usize];
+        perm[j as usize] = pk;
+        perm[j as usize + 256] = pk;
+        perm12[j as usize] = pk12;
+        perm12[j as usize + 256] = pk12;
     }
     [perm, perm12]
 }

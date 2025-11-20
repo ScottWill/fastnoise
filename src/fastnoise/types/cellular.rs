@@ -132,7 +132,7 @@ impl CellularNoise {
     fn single_cellular_2edge3d(&self, pos: Vec3A) -> f32 {
         let [xr, yr, zr] = pos.as_ivec3().to_array();
 
-        let mut distance: Vec<f32> = vec![f32::MAX; FN_CELLULAR_INDEX_MAX + 1];
+        let mut distance = [f32::MAX; FN_CELLULAR_INDEX_MAX + 1];
 
         match self.cellular_distance_function {
             CellularDistanceFunction::Euclidean => {
