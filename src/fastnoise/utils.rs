@@ -1,7 +1,6 @@
 use glam::{IVec3, Vec3A};
 
 use crate::fastnoise::consts::{X_PRIME, Y_PRIME, Z_PRIME};
-
 use super::consts::{GRAD_A, VAL_LUT};
 
 // Utility functions
