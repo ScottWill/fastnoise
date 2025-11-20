@@ -1,12 +1,6 @@
 use glam::{Vec3A, vec4};
 
-use crate::{
-    Builder, FractalType, fastnoise::{
-        Sampler,
-        consts::{F3, G3, V3A_001, V3A_010, V3A_011, V3A_100, V3A_101, V3A_110},
-        utils::{fractal_bounding, grad_coord_3d, permutate},
-    }
-};
+use crate::{Builder, FractalType, Sampler, consts::*, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct SimplexNoiseBuilder {
@@ -45,6 +39,12 @@ pub struct SimplexNoise {
     octaves: usize,
     perm: [u8; 512],
     perm12: [u8; 512],
+}
+
+impl From<SimplexNoiseBuilder> for SimplexNoise {
+    fn from(value: SimplexNoiseBuilder) -> Self {
+        value.build()
+    }
 }
 
 impl Sampler for SimplexNoise {

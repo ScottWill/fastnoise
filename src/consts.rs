@@ -1873,7 +1873,7 @@ pub(super) const F4: f32 = (2.236068 - 1.0) / 4.0;
 #[allow(clippy::unreadable_literal)]
 pub(super) const G4: f32 = (5.0 - 2.236068) / 20.0;
 pub(super) const CUBIC_3D_BOUNDING: f32 = 1.0 / (1.5 * 1.5 * 1.5);
-pub(super) const CUBIC_2D_BOUNDING: f32 = 1.0 / 1.5 * 1.5;
+pub(super) const CUBIC_2D_BOUNDING: f32 = 1.0 / (1.5 * 1.5);
 
 pub(super) const V3A_001: Vec3A = Vec3A::Z;
 pub(super) const V3A_010: Vec3A = Vec3A::Y;

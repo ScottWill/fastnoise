@@ -1,7 +1,8 @@
-use glam::{IVec3, Vec3A};
+use glam::{IVec2, IVec3, Vec2, Vec3A};
 
-use crate::fastnoise::consts::{X_PRIME, Y_PRIME, Z_PRIME};
-use super::consts::{GRAD_A, VAL_LUT};
+use crate::consts::{GRAD_X, GRAD_Y};
+
+use super::consts::{GRAD_A, VAL_LUT, X_PRIME, Y_PRIME, Z_PRIME};
 
 // Utility functions
 pub(super) fn fast_floor(f: f32) -> i32 {
@@ -16,10 +17,6 @@ pub(super) fn fast_round(f: f32) -> i32 {
     }
 }
 
-#[allow(dead_code)]
-pub(super) fn fast_abs(i: i32) -> i32 {
-    i32::abs(i)
-}
 
 pub(super) fn fast_abs_f(i: f32) -> f32 {
     f32::abs(i)
@@ -35,7 +32,12 @@ pub(super) fn interp_hermite_func(t: f32) -> f32 {
 }
 
 #[inline]
-pub(super) fn interp_hermite_func_vec(t: Vec3A) -> Vec3A {
+pub(super) fn interp_hermite_func_vec2(t: Vec2) -> Vec2 {
+    t * t * (3.0 - 2.0 * t)
+}
+
+#[inline]
+pub(super) fn interp_hermite_func_vec3(t: Vec3A) -> Vec3A {
     t * t * (3.0 - 2.0 * t)
 }
 
@@ -44,7 +46,12 @@ pub(super) fn interp_quintic_func(t: f32) -> f32 {
 }
 
 #[inline]
-pub(super) fn interp_quintic_func_vec(t: Vec3A) -> Vec3A {
+pub(super) fn interp_quintic_func_vec2(t: Vec2) -> Vec2 {
+    t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+}
+
+#[inline]
+pub(super) fn interp_quintic_func_vec3(t: Vec3A) -> Vec3A {
     t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 }
 
@@ -57,9 +64,29 @@ pub(super) fn cubic_lerp(a: f32, b: f32, c: f32, d: f32, t: f32) -> f32 {
 }
 
 #[inline]
+pub(super) fn grad_coord_2d(perm: &[u8], perm12: &[u8], offset: u8, a: IVec2, b: Vec2) -> f32 {
+    let lut_pos = index2d_12(perm, perm12, offset, a) as usize;
+    b.x * GRAD_X[lut_pos] + b.y * GRAD_Y[lut_pos]
+}
+
+#[inline]
 pub(super) fn grad_coord_3d(perm: &[u8], perm12: &[u8], offset: u8, a: IVec3, b: Vec3A) -> f32 {
     let lut_pos = index3d_12(perm, perm12, offset, a) as usize;
     (b * GRAD_A[lut_pos]).element_sum()
+}
+
+#[inline]
+pub fn index2d_256(perm: &[u8], offset: u8, v: IVec2) -> u8 {
+    let y = (v.y as usize & 0xff) + offset as usize;
+    let x = (v.x as usize & 0xff) + perm[y] as usize;
+    perm[x]
+}
+
+#[inline]
+pub(super) fn index2d_12(perm: &[u8], perm12: &[u8], offset: u8, v: IVec2) -> u8 {
+    let y = (v.y & 0xFF) as usize + offset as usize;
+    let x = (v.x & 0xFF) as usize + perm[y] as usize;
+    perm12[x]
 }
 
 #[inline]
@@ -76,6 +103,15 @@ pub(super) fn val_coord_3d_fast(perm: &[u8], offset: u8, pos: IVec3) -> f32 {
 }
 
 #[inline]
+pub(super) fn val_coord_2d(seed: i32, pos: IVec2) -> f32 {
+    use std::num::Wrapping;
+    let mut n = Wrapping(seed);
+    n ^= Wrapping(X_PRIME) * Wrapping(pos.x);
+    n ^= Wrapping(Y_PRIME) * Wrapping(pos.y);
+    (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
+}
+
+#[inline]
 pub(super) fn val_coord_3d(seed: i32, pos: IVec3) -> f32 {
     use std::num::Wrapping;
 
@@ -84,7 +120,7 @@ pub(super) fn val_coord_3d(seed: i32, pos: IVec3) -> f32 {
     n ^= Wrapping(Y_PRIME) * Wrapping(pos.y);
     n ^= Wrapping(Z_PRIME) * Wrapping(pos.z);
 
-    (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483648.0
+    (n * n * n * Wrapping(60493i32)).0 as f32 / 2147483600.0
 }
 
 #[inline]

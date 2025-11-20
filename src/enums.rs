@@ -74,11 +74,11 @@ pub enum CellularReturnType {
     #[default]
     CellValue,
     Distance,
-    Distance2,
-    Distance2Add,
-    Distance2Sub,
-    Distance2Mul,
-    Distance2Div,
+    // Distance2,
+    // Distance2Add,
+    // Distance2Sub,
+    // Distance2Mul,
+    // Distance2Div,
 }
 
 impl Display for CellularReturnType {
