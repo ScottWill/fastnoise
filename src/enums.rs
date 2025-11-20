@@ -7,7 +7,6 @@ pub enum NoiseType {
     Cellular,
     Cubic,
     Perlin,
-    Random,
     Simplex,
     #[default]
     Value,
@@ -23,9 +22,9 @@ impl Display for NoiseType {
 #[derive(Debug, Default, PartialEq, Copy, Clone, Deserialize, Serialize)]
 /// Interpolation function to use
 pub enum Interp {
+    #[default]
     Linear,
     Hermite,
-    #[default]
     Quintic,
 }
 
@@ -71,11 +70,6 @@ pub enum CellularReturnType {
     #[default]
     CellValue,
     Distance,
-    // Distance2,
-    // Distance2Add,
-    // Distance2Sub,
-    // Distance2Mul,
-    // Distance2Div,
 }
 
 impl Display for CellularReturnType {

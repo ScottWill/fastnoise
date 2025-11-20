@@ -59,7 +59,7 @@ impl Sampler for PerlinNoise {
                 FractalType::Billow => self.billow3d(pos),
                 FractalType::RigidMulti => self.rigid_multi3d(pos),
             },
-            None => self.single_perlin3d(0, pos),
+            None => self.perlin3d(0, pos),
         }
     }
 
@@ -71,21 +71,21 @@ impl Sampler for PerlinNoise {
                 FractalType::Billow => self.billow(pos),
                 FractalType::RigidMulti => self.rigid_multi(pos),
             },
-            None => self.single_perlin(0, pos),
+            None => self.perlin(0, pos),
         }
     }
 }
 
 impl PerlinNoise {
     fn fbm3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_perlin3d(self.perm[0], pos);
+        let mut sum: f32 = self.perlin3d(self.perm[0], pos);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d(self.perm[i], pos) * amp;
+            sum += self.perlin3d(self.perm[i], pos) * amp;
             i += 1;
         }
 
@@ -93,14 +93,14 @@ impl PerlinNoise {
     }
 
     fn billow3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.single_perlin3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut sum: f32 = self.perlin3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.perlin3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
@@ -108,21 +108,21 @@ impl PerlinNoise {
     }
 
     fn rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = 1.0 - self.single_perlin3d(self.perm[0], pos).abs();
+        let mut sum: f32 = 1.0 - self.perlin3d(self.perm[0], pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_perlin3d(self.perm[i], pos).abs()) * amp;
+            sum += -(1.0 - self.perlin3d(self.perm[i], pos).abs()) * amp;
             i += 1;
         }
 
         sum
     }
 
-    fn single_perlin3d(&self, offset: u8, pos: Vec3A) -> f32 {
+    fn perlin3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
@@ -157,14 +157,14 @@ impl PerlinNoise {
     }
 
     fn fbm(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = self.single_perlin(self.perm[0], pos);
+        let mut sum: f32 = self.perlin(self.perm[0], pos);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin(self.perm[i], pos) * amp;
+            sum += self.perlin(self.perm[i], pos) * amp;
             i += 1;
         }
 
@@ -172,14 +172,14 @@ impl PerlinNoise {
     }
 
     fn billow(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = self.single_perlin(self.perm[0], pos).abs().mul_add(2.0, -1.0);
+        let mut sum: f32 = self.perlin(self.perm[0], pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += self.single_perlin(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
+            sum += self.perlin(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
             i += 1;
         }
 
@@ -187,21 +187,21 @@ impl PerlinNoise {
     }
 
     fn rigid_multi(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = 1.0 - self.single_perlin(self.perm[0], pos).abs();
+        let mut sum: f32 = 1.0 - self.perlin(self.perm[0], pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += -(1.0 - self.single_perlin(self.perm[i], pos).abs()) * amp;
+            sum += -(1.0 - self.perlin(self.perm[i], pos).abs()) * amp;
             i += 1;
         }
 
         sum
     }
 
-    fn single_perlin(&self, offset: u8, pos: Vec2) -> f32 {
+    fn perlin(&self, offset: u8, pos: Vec2) -> f32 {
         let p0 = pos.floor();
 
         let ps = match self.interp {

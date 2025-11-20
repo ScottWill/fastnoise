@@ -157,5 +157,5 @@ pub(super) fn fractal_bounding(gain: f32, octaves: u16) -> f32 {
         fb += amp;
         amp *= gain;
     }
-    fb.recip()
+    1.0 / fb
 }
