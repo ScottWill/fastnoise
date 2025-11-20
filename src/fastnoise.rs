@@ -273,7 +273,7 @@ impl FastNoise {
                 FractalType::Billow => self.single_value_fractal_billow3d(pos),
                 FractalType::RigidMulti => self.single_value_fractal_rigid_multi3d(pos),
             },
-            NoiseType::WhiteNoise => self.get_white_noise3d(pos),
+            NoiseType::White => self.get_white_noise3d(pos),
         }
     }
 
@@ -310,7 +310,7 @@ impl FastNoise {
                 CellularReturnType::Distance => self.single_cellular(x, y),
                 _ => self.single_cellular_2edge(x, y),
             },
-            NoiseType::WhiteNoise => self.get_white_noise(x, y),
+            NoiseType::White => self.get_white_noise(x, y),
             NoiseType::Cubic => self.single_cubic(0, x, y),
             NoiseType::CubicFractal => match self.fractal_type {
                 FractalType::FBM => self.single_cubic_fractal_fbm(x, y),

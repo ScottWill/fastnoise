@@ -4,17 +4,14 @@ use std::fmt::{Debug, Display};
 #[derive(Debug, Default, PartialEq, Copy, Clone, Deserialize, Serialize)]
 /// Type of noise to generate
 pub enum NoiseType {
-    Value,
-    ValueFractal,
-    Perlin,
-    PerlinFractal,
-    #[default]
-    Simplex,
-    SimplexFractal,
     Cellular,
-    WhiteNoise,
     Cubic,
-    CubicFractal,
+    Perlin,
+    Random,
+    Simplex,
+    #[default]
+    Value,
+    White,
 }
 
 impl Display for NoiseType {
