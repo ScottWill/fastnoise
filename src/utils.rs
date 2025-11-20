@@ -1,7 +1,6 @@
 use glam::{IVec3, Vec3A};
 
-use crate::fastnoise::consts::{X_PRIME, Y_PRIME, Z_PRIME};
-use super::consts::{GRAD_A, VAL_LUT};
+use super::consts::{GRAD_A, VAL_LUT, X_PRIME, Y_PRIME, Z_PRIME};
 
 // Utility functions
 pub(super) fn fast_floor(f: f32) -> i32 {
