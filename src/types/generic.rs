@@ -8,7 +8,7 @@ pub enum BuilderError<'a> {
 }
 
 #[derive(Debug, Deserialize, Clone, Copy, Serialize)]
-pub struct GenericNoiseBuilder {
+pub struct NoiseBuilder {
     pub cellular_distance_function: Option<CellularDistanceFunction>,
     pub cellular_jitter: Option<f32>,
     pub cellular_return_type: Option<CellularReturnType>,
@@ -22,7 +22,7 @@ pub struct GenericNoiseBuilder {
     pub seed: Option<u64>,
 }
 
-impl GenericNoiseBuilder {
+impl NoiseBuilder {
     pub fn try_build_cellular<'a>(self) -> Result<CellularNoise, BuilderError<'a>> {
         match self.noise_type {
             Some(NoiseType::Cellular) => Ok(CellularNoiseBuilder {

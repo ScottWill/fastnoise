@@ -21,7 +21,7 @@ pub use enums::{CellularDistanceFunction, CellularReturnType, FractalType, Inter
 pub use sampler::{sample_cube, sample_plane, sample3d};
 pub use types::cellular::{CellularNoise, CellularNoiseBuilder};
 pub use types::cubic::{CubicNoise, CubicNoiseBuilder};
-pub use types::generic::GenericNoiseBuilder;
+pub use types::generic::NoiseBuilder;
 pub use types::perlin::{PerlinNoise, PerlinNoiseBuilder};
 pub use types::simplex::{SimplexNoise, SimplexNoiseBuilder};
 pub use types::value::{ValueNoise, ValueNoiseBuilder};
