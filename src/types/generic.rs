@@ -7,7 +7,7 @@ pub enum BuilderError<'a> {
     MissingParameter(&'a str),
 }
 
-#[derive(Debug, Deserialize, Clone, Copy, Serialize)]
+#[derive(Debug, Default, Deserialize, Clone, Copy, Serialize)]
 pub struct NoiseBuilder {
     pub cellular_distance_function: Option<CellularDistanceFunction>,
     pub cellular_jitter: Option<f32>,
