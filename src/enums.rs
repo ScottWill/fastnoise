@@ -38,6 +38,7 @@ impl Display for Interp {
 /// Fractal function to use
 pub enum FractalType {
     #[default]
+    None,
     FBM,
     Billow,
     RigidMulti,

@@ -5,21 +5,18 @@ use fastnoise::{Builder as _, FractalType, PerlinNoiseBuilder, Sampler as _};
 use std::io::{stdout, Write as _};
 
 fn print_color(color: RGB, text: &str) {
-    queue!(
-        stdout(),
-        SetForegroundColor(Rgb {
-            r: (color.r * 255.0) as u8,
-            g: (color.g * 255.0) as u8,
-            b: (color.b * 255.0) as u8,
-        })
-    )
-    .expect("Command Fail");
-    queue!(stdout(), Print(text)).expect("Command fail");
+    let foreground = SetForegroundColor(Rgb {
+        r: (color.r * 255.0) as u8,
+        g: (color.g * 255.0) as u8,
+        b: (color.b * 255.0) as u8,
+    });
+    queue!(stdout(), foreground).expect("set foureground failed");
+    queue!(stdout(), Print(text)).expect("print text fail");
 }
 
 fn main() {
     let noise = PerlinNoiseBuilder {
-        fractal_type: Some(FractalType::FBM),
+        fractal_type: FractalType::FBM,
         frequency: 2.0,
         gain: 0.6,
         lacunarity: 2.0,
@@ -41,5 +38,6 @@ fn main() {
     }
 
     print_color(RGB::named(WHITE), "\n");
-    stdout().flush().expect("Flush Fail");
+    stdout().flush().expect("flush failed");
+
 }

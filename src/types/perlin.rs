@@ -4,7 +4,7 @@ use crate::{Builder, FractalType, Interp, Sampler, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct PerlinNoiseBuilder {
-    pub fractal_type: Option<FractalType>,
+    pub fractal_type: FractalType,
     pub frequency: f32,
     pub gain: f32,
     pub interp: Interp,
@@ -34,7 +34,7 @@ impl Builder for PerlinNoiseBuilder {
 #[derive(Clone, Copy)]
 pub struct PerlinNoise {
     fractal_bounding: f32,
-    fractal_type: Option<FractalType>,
+    fractal_type: FractalType,
     frequency: f32,
     gain: f32,
     interp: Interp,
@@ -54,24 +54,20 @@ impl Sampler for PerlinNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
         match self.fractal_type {
-            Some(fractal) => match fractal {
-                FractalType::FBM => self.fbm3d(pos),
-                FractalType::Billow => self.billow3d(pos),
-                FractalType::RigidMulti => self.rigid_multi3d(pos),
-            },
-            None => self.perlin3d(0, pos),
+            FractalType::FBM => self.fbm3d(pos),
+            FractalType::Billow => self.billow3d(pos),
+            FractalType::RigidMulti => self.rigid_multi3d(pos),
+            FractalType::None => self.perlin3d(0, pos),
         }
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
         match self.fractal_type {
-            Some(fractal) => match fractal {
-                FractalType::FBM => self.fbm(pos),
-                FractalType::Billow => self.billow(pos),
-                FractalType::RigidMulti => self.rigid_multi(pos),
-            },
-            None => self.perlin(0, pos),
+            FractalType::FBM => self.fbm(pos),
+            FractalType::Billow => self.billow(pos),
+            FractalType::RigidMulti => self.rigid_multi(pos),
+            FractalType::None => self.perlin(0, pos),
         }
     }
 }
