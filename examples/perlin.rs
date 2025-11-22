@@ -1,7 +1,7 @@
 use bracket_color::prelude::*;
 use crossterm::queue;
 use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
-use fastnoise::{Builder as _, FractalType, PerlinNoiseBuilder, Sampler as _};
+use fastnoise::{Builder as _, FractalNoiseBuilder, FractalType, PerlinNoiseBuilder, Sampler as _};
 use std::io::{stdout, Write as _};
 
 fn print_color(color: RGB, text: &str) {
@@ -16,11 +16,13 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = PerlinNoiseBuilder {
-        fractal_type: FractalType::FBM,
+        fractal_noise: Some(FractalNoiseBuilder {
+            fractal_type: FractalType::FBM,
+            gain: 0.6,
+            lacunarity: 2.0,
+            octaves: 5,
+        }),
         frequency: 2.0,
-        gain: 0.6,
-        lacunarity: 2.0,
-        octaves: 5,
         seed: 31337,
         ..Default::default()
     }.build();
