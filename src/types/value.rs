@@ -1,15 +1,13 @@
 use glam::{Vec3A, ivec3, vec4};
 
-use crate::{Builder, FractalType, Interp, Sampler, utils::*};
+use crate::{Builder, Interp, Sampler, utils::*};
+use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Default)]
 pub struct ValueNoiseBuilder {
-    pub fractal_type: FractalType,
+    pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
-    pub gain: f32,
     pub interp: Interp,
-    pub lacunarity: f32,
-    pub octaves: u16,
     pub seed: u64,
 }
 
@@ -17,13 +15,9 @@ impl Builder for ValueNoiseBuilder {
     type Output = ValueNoise;
     fn build(self) -> Self::Output {
         Self::Output {
-            fractal_bounding: fractal_bounding(self.gain, self.octaves),
-            fractal_type: self.fractal_type,
+            fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
-            gain: self.gain,
             interp: self.interp,
-            lacunarity: self.lacunarity,
-            octaves: self.octaves as usize,
             perm: permutate(self.seed)[0],
         }
     }
@@ -31,13 +25,9 @@ impl Builder for ValueNoiseBuilder {
 
 #[derive(Clone, Copy)]
 pub struct ValueNoise {
-    fractal_bounding: f32,
-    fractal_type: FractalType,
+    fractal_noise: Option<FractalNoise>,
     frequency: f32,
-    gain: f32,
     interp: Interp,
-    lacunarity: f32,
-    octaves: usize,
     perm: [u8; 512],
 }
 
@@ -50,56 +40,22 @@ impl From<ValueNoiseBuilder> for ValueNoise {
 impl Sampler for ValueNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        match self.fractal_type {
-            FractalType::FBM => self.fbm3d(pos),
-            FractalType::Billow => self.billow3d(pos),
-            FractalType::RigidMulti => self.rigid_multi3d(pos),
-            FractalType::None => self.value3d(0, pos),
+        match self.fractal_noise {
+            Some(fractal) => fractal.sample3d(pos, |offset, pos| {
+                self.value3d(offset, pos)
+            }),
+            None => self.value3d(None, pos),
         }
     }
 }
 
 impl ValueNoise {
-    fn fbm3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.value3d(self.perm[0], pos);
-        let mut amp = 1.0;
+    fn value3d(&self, offset: Option<usize>, pos: Vec3A) -> f32 {
+        let offset = match offset {
+            Some(ix) => self.perm[ix],
+            None => 0,
+        };
 
-        for i in 1..self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.value3d(self.perm[i], pos) * amp;
-        }
-
-        sum * self.fractal_bounding
-    }
-
-    fn billow3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum = self.value3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
-        let mut amp = 1.0;
-
-        for i in 1..self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.value3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
-        }
-
-        sum * self.fractal_bounding
-    }
-
-    fn rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum= 1.0 - self.value3d(self.perm[0], pos).abs();
-        let mut amp = 1.0;
-
-        for i in 1..self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum -= (1.0 - self.value3d(self.perm[i], pos).abs()) * amp;
-        }
-
-        sum
-    }
-
-    fn value3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor();
         let p1 = (p0 + 1.0).as_ivec3();
         let ps = match self.interp {
