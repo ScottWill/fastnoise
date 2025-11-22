@@ -1,15 +1,13 @@
 use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
 
-use crate::{Builder, FractalType, Interp, Sampler, utils::*};
+use crate::{Builder, Interp, Sampler, utils::*};
+use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Default)]
 pub struct PerlinNoiseBuilder {
-    pub fractal_type: FractalType,
+    pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
-    pub gain: f32,
     pub interp: Interp,
-    pub lacunarity: f32,
-    pub octaves: u16,
     pub seed: u64,
 }
 
@@ -18,13 +16,9 @@ impl Builder for PerlinNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
-            fractal_bounding: fractal_bounding(self.gain, self.octaves),
-            fractal_type: self.fractal_type,
+            fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
-            gain: self.gain,
             interp: self.interp,
-            lacunarity: self.lacunarity,
-            octaves: self.octaves as usize,
             perm,
             perm12,
         }
@@ -33,13 +27,9 @@ impl Builder for PerlinNoiseBuilder {
 
 #[derive(Clone, Copy)]
 pub struct PerlinNoise {
-    fractal_bounding: f32,
-    fractal_type: FractalType,
+    fractal_noise: Option<FractalNoise>,
     frequency: f32,
-    gain: f32,
     interp: Interp,
-    lacunarity: f32,
-    octaves: usize,
     perm: [u8; 512],
     perm12: [u8; 512],
 }
@@ -53,72 +43,33 @@ impl From<PerlinNoiseBuilder> for PerlinNoise {
 impl Sampler for PerlinNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        match self.fractal_type {
-            FractalType::FBM => self.fbm3d(pos),
-            FractalType::Billow => self.billow3d(pos),
-            FractalType::RigidMulti => self.rigid_multi3d(pos),
-            FractalType::None => self.perlin3d(0, pos),
+        match self.fractal_noise {
+            Some(fractal) => fractal.sample3d(pos, |offset, pos| {
+                self.perlin3d(offset, pos)
+            }),
+            None => self.perlin3d(None, pos),
         }
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
-        match self.fractal_type {
-            FractalType::FBM => self.fbm(pos),
-            FractalType::Billow => self.billow(pos),
-            FractalType::RigidMulti => self.rigid_multi(pos),
-            FractalType::None => self.perlin(0, pos),
+        match self.fractal_noise {
+            Some(fractal) => fractal.sample2d(pos, |offset, pos| {
+                self.perlin(offset, pos)
+            }),
+            None => todo!(),
         }
     }
 }
 
 impl PerlinNoise {
-    fn fbm3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.perlin3d(self.perm[0], pos);
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.perlin3d(self.perm[i], pos) * amp;
-            i += 1;
-        }
+    fn perlin3d(&self, offset: Option<usize>, pos: Vec3A) -> f32 {
+        let offset = match offset {
+            Some(ix) => self.perm[ix],
+            None => 0,
+        };
 
-        sum * self.fractal_bounding
-    }
-
-    fn billow3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = self.perlin3d(self.perm[0], pos).abs().mul_add(2.0, -1.0);
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
-
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.perlin3d(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
-            i += 1;
-        }
-
-        sum * self.fractal_bounding
-    }
-
-    fn rigid_multi3d(&self, mut pos: Vec3A) -> f32 {
-        let mut sum: f32 = 1.0 - self.perlin3d(self.perm[0], pos).abs();
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
-
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += -(1.0 - self.perlin3d(self.perm[i], pos).abs()) * amp;
-            i += 1;
-        }
-
-        sum
-    }
-
-    fn perlin3d(&self, offset: u8, pos: Vec3A) -> f32 {
         let p0 = pos.floor();
         let ps = match self.interp {
             Interp::Linear => pos - p0,
@@ -152,52 +103,12 @@ impl PerlinNoise {
 
     }
 
-    fn fbm(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = self.perlin(self.perm[0], pos);
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
+    fn perlin(&self, offset: Option<usize>, pos: Vec2) -> f32 {
+        let offset = match offset {
+            Some(ix) => self.perm[ix],
+            None => 0,
+        };
 
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.perlin(self.perm[i], pos) * amp;
-            i += 1;
-        }
-
-        sum * self.fractal_bounding
-    }
-
-    fn billow(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = self.perlin(self.perm[0], pos).abs().mul_add(2.0, -1.0);
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
-
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += self.perlin(self.perm[i], pos).abs().mul_add(2.0, -1.0) * amp;
-            i += 1;
-        }
-
-        sum * self.fractal_bounding
-    }
-
-    fn rigid_multi(&self, mut pos: Vec2) -> f32 {
-        let mut sum: f32 = 1.0 - self.perlin(self.perm[0], pos).abs();
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
-
-        while i < self.octaves {
-            pos *= self.lacunarity;
-            amp *= self.gain;
-            sum += -(1.0 - self.perlin(self.perm[i], pos).abs()) * amp;
-            i += 1;
-        }
-
-        sum
-    }
-
-    fn perlin(&self, offset: u8, pos: Vec2) -> f32 {
         let p0 = pos.floor();
 
         let ps = match self.interp {

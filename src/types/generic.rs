@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Builder, CellularDistanceFunction, CellularNoise, CellularNoiseBuilder, CellularReturnType, CubicNoise, CubicNoiseBuilder, FractalType, Interp, NoiseType, PerlinNoise, PerlinNoiseBuilder, SimplexNoise, SimplexNoiseBuilder, ValueNoise, ValueNoiseBuilder, WhiteNoise, WhiteNoiseBuilder};
+use crate::*;
 
 pub enum BuilderError<'a> {
     InvalidNoiseType,
@@ -39,11 +39,11 @@ impl NoiseBuilder {
     pub fn try_build_cubic<'a>(self) -> Result<CubicNoise, BuilderError<'a>> {
         match self.noise_type {
             Some(NoiseType::Cubic) => Ok(CubicNoiseBuilder {
-                fractal_type: self.fractal_type()?,
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal)?),
+                    None => None,
+                },
                 frequency: self.frequency()?,
-                gain: self.gain()?,
-                lacunarity: self.lacunarity()?,
-                octaves: self.octaves()?,
                 seed: self.seed()?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
@@ -53,12 +53,12 @@ impl NoiseBuilder {
     pub fn try_build_perlin<'a>(self) -> Result<PerlinNoise, BuilderError<'a>> {
         match self.noise_type {
             Some(NoiseType::Perlin) => Ok(PerlinNoiseBuilder {
-                fractal_type: self.fractal_type()?,
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal)?),
+                    None => None,
+                },
                 frequency: self.frequency()?,
-                gain: self.gain()?,
                 interp: self.interp()?,
-                lacunarity: self.lacunarity()?,
-                octaves: self.octaves()?,
                 seed: self.seed()?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
@@ -68,11 +68,11 @@ impl NoiseBuilder {
     pub fn try_build_simplex<'a>(self) -> Result<SimplexNoise, BuilderError<'a>> {
         match self.noise_type {
             Some(NoiseType::Simplex) => Ok(SimplexNoiseBuilder {
-                fractal_type: self.fractal_type()?,
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal)?),
+                    None => None,
+                },
                 frequency: self.frequency()?,
-                gain: self.gain()?,
-                lacunarity: self.lacunarity()?,
-                octaves: self.octaves()?,
                 seed: self.seed()?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
@@ -82,12 +82,12 @@ impl NoiseBuilder {
     pub fn try_build_value<'a>(self) -> Result<ValueNoise, BuilderError<'a>> {
         match self.noise_type {
             Some(NoiseType::Value) => Ok(ValueNoiseBuilder {
-                fractal_type: self.fractal_type()?,
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal)?),
+                    None => None,
+                },
                 frequency: self.frequency()?,
-                gain: self.gain()?,
                 interp: self.interp()?,
-                lacunarity: self.lacunarity()?,
-                octaves: self.octaves()?,
                 seed: self.seed()?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
@@ -102,6 +102,15 @@ impl NoiseBuilder {
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
         }
+    }
+
+    fn fractal_noise<'a>(&self, fractal_type: FractalType) -> Result<FractalNoiseBuilder, BuilderError<'a>> {
+        Ok(FractalNoiseBuilder {
+            fractal_type,
+            gain: self.gain()?,
+            lacunarity: self.lacunarity()?,
+            octaves: self.octaves()?,
+        })
     }
 
     fn cellular_distance_function<'a>(&self) -> Result<CellularDistanceFunction, BuilderError<'a>> {
@@ -120,12 +129,6 @@ impl NoiseBuilder {
         match self.cellular_return_type {
             Some(value) => Ok(value),
             None => Err(BuilderError::MissingParameter("cellular_return_type")),
-        }
-    }
-    fn fractal_type<'a>(&self) -> Result<FractalType, BuilderError<'a>> {
-        match self.fractal_type {
-            Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("fractal_type")),
         }
     }
     fn frequency<'a>(&self) -> Result<f32, BuilderError<'a>> {

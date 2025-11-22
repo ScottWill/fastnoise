@@ -1,5 +1,6 @@
 pub(super) mod cellular;
 pub(super) mod cubic;
+pub(super) mod fractal;
 pub(super) mod generic;
 pub(super) mod perlin;
 pub(super) mod simplex;
