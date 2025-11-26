@@ -25,11 +25,11 @@ impl Builder for FractalNoiseBuilder {
 
 #[derive(Clone, Copy)]
 pub struct FractalNoise {
-    pub fractal_bounding: f32,
-    pub fractal_type: FractalType,
-    pub gain: f32,
-    pub lacunarity: f32,
-    pub octaves: usize,
+    fractal_bounding: f32,
+    fractal_type: FractalType,
+    gain: f32,
+    lacunarity: f32,
+    octaves: usize,
 }
 
 impl FractalNoise {
