@@ -19,11 +19,11 @@ fn main() {
         fractal_noise: Some(FractalNoiseBuilder {
             fractal_type: FractalType::FBM,
             gain: 0.6,
-            lacunarity: 2.0,
-            octaves: 5,
+            lacunarity: 2.1,
+            octaves: 3,
         }),
-        frequency: 2.0,
-        seed: 31337,
+        frequency: 1.3,
+        seed: 8008135,
         ..Default::default()
     }.build();
 
