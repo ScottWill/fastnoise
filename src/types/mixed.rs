@@ -38,7 +38,7 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
     a.min(b) - h * h * k
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct MixedNoiseBuilder {
     pub mix_type: MixType,
     pub noise0: NoiseBuilder,
@@ -67,7 +67,7 @@ impl Builder for MixedNoiseBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MixedNoise {
     mix_type: MixType,
     noises: [Box<NoiseSampler>; 2],

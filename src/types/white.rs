@@ -2,7 +2,7 @@ use glam::{Vec2, Vec3A, ivec2, ivec3};
 
 use crate::{Builder, Sampler, utils::{val_coord_2d, val_coord_3d}};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct WhiteNoiseBuilder {
     pub frequency: f32,
     pub seed: u64,
@@ -18,7 +18,7 @@ impl Builder for WhiteNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct WhiteNoise {
     frequency: f32,
     seed: i32,

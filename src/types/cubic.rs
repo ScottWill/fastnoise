@@ -3,7 +3,7 @@ use glam::{Vec3A, ivec3};
 use crate::{Builder, Sampler, consts::CUBIC_3D_BOUNDING, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct CubicNoiseBuilder {
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
@@ -21,7 +21,7 @@ impl Builder for CubicNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CubicNoise {
     fractal_noise: Option<FractalNoise>,
     frequency: f32,

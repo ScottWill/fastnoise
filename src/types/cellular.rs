@@ -2,7 +2,7 @@ use glam::{IVec3, Vec2, Vec3A, ivec2, ivec3};
 
 use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct CellularNoiseBuilder {
     pub cellular_distance_function: CellularDistanceFunction,
     pub cellular_jitter: f32,
@@ -25,7 +25,7 @@ impl Builder for CellularNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CellularNoise {
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,

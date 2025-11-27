@@ -3,7 +3,7 @@ use glam::{Vec3A, vec4};
 use crate::{Builder, Sampler, consts::*, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct SimplexNoiseBuilder {
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
@@ -23,7 +23,7 @@ impl Builder for SimplexNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct SimplexNoise {
     fractal_noise: Option<FractalNoise>,
     frequency: f32,

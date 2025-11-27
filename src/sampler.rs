@@ -4,7 +4,7 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterato
 use crate::{types::mixed::MixedNoise, *};
 use super::utils::lerp;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub enum NoiseSampler {
     Cellular(CellularNoise),
     Cubic(CubicNoise),

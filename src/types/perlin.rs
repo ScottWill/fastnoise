@@ -3,7 +3,7 @@ use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
 use crate::{Builder, Interp, Sampler, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct PerlinNoiseBuilder {
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
@@ -25,7 +25,7 @@ impl Builder for PerlinNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct PerlinNoise {
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
