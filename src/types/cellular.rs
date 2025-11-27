@@ -25,7 +25,7 @@ impl Builder for CellularNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct CellularNoise {
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,

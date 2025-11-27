@@ -1,13 +1,23 @@
+use std::fmt::{Debug, Display};
+
+use serde::{Deserialize, Serialize};
+
 use crate::{Builder, NoiseBuilder, NoiseSampler, Sampler, types::generic::BuilderError};
 
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub enum MixType {
     #[default]
     Avg,
     Max,
     Min,
     SMin(f32),
+}
+
+impl Display for MixType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self, f)
+    }
 }
 
 impl MixType {

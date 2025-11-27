@@ -1,10 +1,10 @@
-use glam::{UVec2, UVec3, Vec2, Vec3, vec2, vec3a};
+use glam::{UVec2, UVec3, Vec2, Vec3};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 use crate::{types::mixed::MixedNoise, *};
 use super::utils::lerp;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub enum NoiseSampler {
     Cellular(CellularNoise),
     Cubic(CubicNoise),
@@ -13,6 +13,8 @@ pub enum NoiseSampler {
     Simplex(SimplexNoise),
     Value(ValueNoise),
     White(WhiteNoise),
+    #[default]
+    None,
 }
 
 impl Sampler for NoiseSampler {
@@ -25,6 +27,7 @@ impl Sampler for NoiseSampler {
             NoiseSampler::Simplex(noise) => noise.sample3d(position),
             NoiseSampler::Value(noise) => noise.sample3d(position),
             NoiseSampler::White(noise) => noise.sample3d(position),
+            NoiseSampler::None => 0.0,
         }
     }
 
@@ -37,6 +40,7 @@ impl Sampler for NoiseSampler {
             NoiseSampler::Simplex(noise) => noise.sample2d(position),
             NoiseSampler::Value(noise) => noise.sample2d(position),
             NoiseSampler::White(noise) => noise.sample2d(position),
+            NoiseSampler::None => 0.0,
         }
     }
 }

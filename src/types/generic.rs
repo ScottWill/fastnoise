@@ -112,160 +112,226 @@ impl From<WhiteNoiseBuilder> for NoiseBuilder {
 }
 
 impl NoiseBuilder {
+    pub fn build_noise_sampler(self) -> NoiseSampler {
+        self.into_noise_sampler(true).unwrap()
+    }
+
+    pub fn build_cellular(self) -> CellularNoise {
+        self.into_cellular(true).unwrap()
+    }
+
+    pub fn build_cubic(self) -> CubicNoise {
+        self.into_cubic(true).unwrap()
+    }
+
+    pub fn build_perlin(self) -> PerlinNoise {
+        self.into_perlin(true).unwrap()
+    }
+
+    pub fn build_simplex(self) -> SimplexNoise {
+        self.into_simplex(true).unwrap()
+    }
+
+    pub fn build_value(self) -> ValueNoise {
+        self.into_value(true).unwrap()
+    }
+
+    pub fn build_white(self) -> WhiteNoise {
+        self.into_white(true).unwrap()
+    }
+
     pub fn try_build_noise_sampler(self) -> Result<NoiseSampler, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Cellular) => Ok(NoiseSampler::Cellular(self.try_build_cellular()?)),
-            Some(NoiseType::Cubic) => Ok(NoiseSampler::Cubic(self.try_build_cubic()?)),
-            Some(NoiseType::Perlin) => Ok(NoiseSampler::Perlin(self.try_build_perlin()?)),
-            Some(NoiseType::Simplex) => Ok(NoiseSampler::Simplex(self.try_build_simplex()?)),
-            Some(NoiseType::Value) => Ok(NoiseSampler::Value(self.try_build_value()?)),
-            Some(NoiseType::White) => Ok(NoiseSampler::White(self.try_build_white()?)),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_noise_sampler(false)
     }
 
     pub fn try_build_cellular(self) -> Result<CellularNoise, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Cellular) => Ok(CellularNoiseBuilder {
-                cellular_distance_function: self.cellular_distance_function()?,
-                cellular_jitter: self.cellular_jitter()?,
-                cellular_return_type: self.cellular_return_type()?,
-                frequency: self.frequency()?,
-                seed: self.seed()?,
-            }.build()),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_cellular(false)
     }
 
     pub fn try_build_cubic(self) -> Result<CubicNoise, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Cubic) => Ok(CubicNoiseBuilder {
-                fractal_noise: match self.fractal_type {
-                    Some(fractal) => Some(self.fractal_noise(fractal)?),
-                    None => None,
-                },
-                frequency: self.frequency()?,
-                seed: self.seed()?,
-            }.build()),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_cubic(false)
     }
 
     pub fn try_build_perlin(self) -> Result<PerlinNoise, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Perlin) => Ok(PerlinNoiseBuilder {
-                fractal_noise: match self.fractal_type {
-                    Some(fractal) => Some(self.fractal_noise(fractal)?),
-                    None => None,
-                },
-                frequency: self.frequency()?,
-                interp: self.interp()?,
-                seed: self.seed()?,
-            }.build()),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_perlin(false)
     }
 
     pub fn try_build_simplex(self) -> Result<SimplexNoise, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Simplex) => Ok(SimplexNoiseBuilder {
-                fractal_noise: match self.fractal_type {
-                    Some(fractal) => Some(self.fractal_noise(fractal)?),
-                    None => None,
-                },
-                frequency: self.frequency()?,
-                seed: self.seed()?,
-            }.build()),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_simplex(false)
     }
 
     pub fn try_build_value(self) -> Result<ValueNoise, BuilderError> {
-        match self.noise_type {
-            Some(NoiseType::Value) => Ok(ValueNoiseBuilder {
-                fractal_noise: match self.fractal_type {
-                    Some(fractal) => Some(self.fractal_noise(fractal)?),
-                    None => None,
-                },
-                frequency: self.frequency()?,
-                interp: self.interp()?,
-                seed: self.seed()?,
-            }.build()),
-            _ => Err(BuilderError::InvalidNoiseType),
-        }
+        self.into_value(false)
     }
 
     pub fn try_build_white(self) -> Result<WhiteNoise, BuilderError> {
+        self.into_white(false)
+    }
+
+    fn into_noise_sampler(self, use_default: bool) -> Result<NoiseSampler, BuilderError> {
         match self.noise_type {
-            Some(NoiseType::White) => Ok(WhiteNoiseBuilder {
-                frequency: self.frequency()?,
-                seed: self.seed()?,
+            Some(NoiseType::Cellular) => Ok(NoiseSampler::Cellular(self.into_cellular(use_default)?)),
+            Some(NoiseType::Cubic) => Ok(NoiseSampler::Cubic(self.into_cubic(use_default)?)),
+            Some(NoiseType::Perlin) => Ok(NoiseSampler::Perlin(self.into_perlin(use_default)?)),
+            Some(NoiseType::Simplex) => Ok(NoiseSampler::Simplex(self.into_simplex(use_default)?)),
+            Some(NoiseType::Value) => Ok(NoiseSampler::Value(self.into_value(use_default)?)),
+            Some(NoiseType::White) => Ok(NoiseSampler::White(self.into_white(use_default)?)),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn into_cellular(self, use_default: bool) -> Result<CellularNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::Cellular) => Ok(CellularNoiseBuilder {
+                cellular_distance_function: self.cellular_distance_function(use_default)?,
+                cellular_jitter: self.cellular_jitter(use_default)?,
+                cellular_return_type: self.cellular_return_type(use_default)?,
+                frequency: self.frequency(use_default)?,
+                seed: self.seed(use_default)?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
         }
     }
 
-    fn fractal_noise(&self, fractal_type: FractalType) -> Result<FractalNoiseBuilder, BuilderError> {
+    fn into_cubic(self, use_default: bool) -> Result<CubicNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::Cubic) => Ok(CubicNoiseBuilder {
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
+                    None => None,
+                },
+                frequency: self.frequency(use_default)?,
+                seed: self.seed(use_default)?,
+            }.build()),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn into_perlin(self, use_default: bool) -> Result<PerlinNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::Perlin) => Ok(PerlinNoiseBuilder {
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
+                    None => None,
+                },
+                frequency: self.frequency(use_default)?,
+                interp: self.interp(use_default)?,
+                seed: self.seed(use_default)?,
+            }.build()),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn into_simplex(self, use_default: bool) -> Result<SimplexNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::Simplex) => Ok(SimplexNoiseBuilder {
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
+                    None => None,
+                },
+                frequency: self.frequency(use_default)?,
+                seed: self.seed(use_default)?,
+            }.build()),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn into_value(self, use_default: bool) -> Result<ValueNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::Value) => Ok(ValueNoiseBuilder {
+                fractal_noise: match self.fractal_type {
+                    Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
+                    None => None,
+                },
+                frequency: self.frequency(use_default)?,
+                interp: self.interp(use_default)?,
+                seed: self.seed(use_default)?,
+            }.build()),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn into_white(self, use_default: bool) -> Result<WhiteNoise, BuilderError> {
+        match self.noise_type {
+            Some(NoiseType::White) => Ok(WhiteNoiseBuilder {
+                frequency: self.frequency(use_default)?,
+                seed: self.seed(use_default)?,
+            }.build()),
+            _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn fractal_noise(&self, fractal_type: FractalType, use_default: bool) -> Result<FractalNoiseBuilder, BuilderError> {
         Ok(FractalNoiseBuilder {
             fractal_type,
-            gain: self.gain()?,
-            lacunarity: self.lacunarity()?,
-            octaves: self.octaves()?,
+            gain: self.gain(use_default)?,
+            lacunarity: self.lacunarity(use_default)?,
+            octaves: self.octaves(use_default)?,
         })
     }
 
-    fn cellular_distance_function(&self) -> Result<CellularDistanceFunction, BuilderError> {
+    fn cellular_distance_function(&self, use_default: bool) -> Result<CellularDistanceFunction, BuilderError> {
         match self.cellular_distance_function {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("cellular_distance_function".to_owned())),
+            None if use_default => Ok(Default::default()),
+            _ => Err(BuilderError::MissingParameter("cellular_distance_function".to_owned())),
         }
     }
-    fn cellular_jitter(&self) -> Result<f32, BuilderError> {
+    fn cellular_jitter(&self, use_default: bool) -> Result<f32, BuilderError> {
         match self.cellular_jitter {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("cellular_jitter".to_owned())),
+            None if use_default => Ok(Default::default()),
+            _ => Err(BuilderError::MissingParameter("cellular_jitter".to_owned())),
         }
     }
-    fn cellular_return_type(&self) -> Result<CellularReturnType, BuilderError> {
+    fn cellular_return_type(&self, use_default: bool) -> Result<CellularReturnType, BuilderError> {
         match self.cellular_return_type {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("cellular_return_type".to_owned())),
+            None if use_default => Ok(Default::default()),
+            _ => Err(BuilderError::MissingParameter("cellular_return_type".to_owned())),
         }
     }
-    fn frequency(&self) -> Result<f32, BuilderError> {
+    fn frequency(&self, use_default: bool) -> Result<f32, BuilderError> {
         match self.frequency {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("frequency".to_owned())),
+            None if use_default => Ok(1.0),
+            _ => Err(BuilderError::MissingParameter("frequency".to_owned())),
         }
     }
-    fn gain(&self) -> Result<f32, BuilderError> {
+    fn gain(&self, use_default: bool) -> Result<f32, BuilderError> {
         match self.gain {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("gain".to_owned())),
+            None if use_default => Ok(1.0),
+            _ => Err(BuilderError::MissingParameter("gain".to_owned())),
         }
     }
-    fn interp(&self) -> Result<Interp, BuilderError> {
+    fn interp(&self, _use_default: bool) -> Result<Interp, BuilderError> {
         match self.interp {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("interp".to_owned())),
+            // None if use_default => Ok(Default::default()),
+            // _ => Err(BuilderError::MissingParameter("interp".to_owned())),
+            None => Ok(Default::default()),
         }
     }
-    fn lacunarity(&self) -> Result<f32, BuilderError> {
+    fn lacunarity(&self, use_default: bool) -> Result<f32, BuilderError> {
         match self.lacunarity {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("lacunarity".to_owned())),
+            None if use_default => Ok(1.0),
+            _ => Err(BuilderError::MissingParameter("lacunarity".to_owned())),
         }
     }
-    fn octaves(&self) -> Result<u16, BuilderError> {
+    fn octaves(&self, use_default: bool) -> Result<u16, BuilderError> {
         match self.octaves {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("octaves".to_owned())),
+            None if use_default => Ok(1),
+            _ => Err(BuilderError::MissingParameter("octaves".to_owned())),
         }
     }
-    fn seed(&self) -> Result<u64, BuilderError> {
+    fn seed(&self, use_default: bool) -> Result<u64, BuilderError> {
         match self.seed {
             Some(value) => Ok(value),
-            None => Err(BuilderError::MissingParameter("seed".to_owned())),
+            None if use_default => Ok(18446744073709551557),
+            _ => Err(BuilderError::MissingParameter("seed".to_owned())),
         }
     }
 }
