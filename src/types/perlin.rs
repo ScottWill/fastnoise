@@ -57,7 +57,7 @@ impl Sampler for PerlinNoise {
             Some(fractal) => fractal.sample2d(pos, |offset, pos| {
                 self.perlin(offset, pos)
             }),
-            None => todo!(),
+            None => self.perlin(None, pos),
         }
     }
 }
