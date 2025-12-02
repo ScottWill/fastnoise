@@ -1,9 +1,10 @@
 use glam::{Vec2, Vec3A, ivec2, ivec3};
 
-use crate::{Builder, Sampler, utils::{val_coord_2d, val_coord_3d}};
+use crate::{Builder, Sampler, traits::Domain, utils::{val_coord_2d, val_coord_3d}};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct WhiteNoiseBuilder {
+    pub domain: Option<[f32; 2]>,
     pub frequency: f32,
     pub seed: u64,
 }
@@ -12,6 +13,7 @@ impl Builder for WhiteNoiseBuilder {
     type Output = WhiteNoise;
     fn build(self) -> Self::Output {
         Self::Output {
+            domain: self.domain,
             frequency: self.frequency,
             seed: self.seed as i32,
         }
@@ -20,6 +22,7 @@ impl Builder for WhiteNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct WhiteNoise {
+    domain: Option<[f32; 2]>,
     frequency: f32,
     seed: i32,
 }
@@ -30,13 +33,24 @@ impl From<WhiteNoiseBuilder> for WhiteNoise {
     }
 }
 
+impl Domain for WhiteNoise {
+    fn in_domain(&self, value: f32) -> f32 {
+        match self.domain {
+            Some([a, b]) => a + (b - a) * (value + 1.0) * 0.5,
+            None => value,
+        }
+    }
+}
+
 impl Sampler for WhiteNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
-        self.get_white_noise3d(position.into())
+        let value = self.get_white_noise3d(position.into());
+        self.in_domain(value)
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
-        self.get_white_noise(position.into())
+        let value = self.get_white_noise(position.into());
+        self.in_domain(value)
     }
 
 }
