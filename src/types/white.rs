@@ -13,7 +13,7 @@ impl Builder for WhiteNoiseBuilder {
     type Output = WhiteNoise;
     fn build(self) -> Self::Output {
         Self::Output {
-            domain: self.domain,
+            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             frequency: self.frequency,
             seed: self.seed as i32,
         }
@@ -36,7 +36,7 @@ impl From<WhiteNoiseBuilder> for WhiteNoise {
 impl Domain for WhiteNoise {
     fn in_domain(&self, value: f32) -> f32 {
         match self.domain {
-            Some([a, b]) => a + (b - a) * (value + 1.0) * 0.5,
+            Some([a, b]) => a + b * (value + 1.0) * 0.5,
             None => value,
         }
     }

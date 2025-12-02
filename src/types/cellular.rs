@@ -18,7 +18,7 @@ impl Builder for CellularNoiseBuilder {
             cellular_distance_function: self.cellular_distance_function,
             cellular_jitter: self.cellular_jitter,
             cellular_return_type: self.cellular_return_type,
-            domain: self.domain,
+            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             frequency: self.frequency,
             perm: permutate(self.seed)[0],
             seed: self.seed as i32,
@@ -61,7 +61,7 @@ impl Sampler for CellularNoise {
 impl Domain for CellularNoise {
     fn in_domain(&self, value: f32) -> f32 {
         match self.domain {
-            Some([a, b]) => a + (b - a) * (value + 1.0) * 0.5,
+            Some([a, b]) => a + b * (value + 1.0) * 0.5,
             None => value,
         }
     }

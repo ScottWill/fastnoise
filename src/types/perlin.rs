@@ -17,7 +17,7 @@ impl Builder for PerlinNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
-            domain: self.domain,
+            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             interp: self.interp,
@@ -40,7 +40,7 @@ pub struct PerlinNoise {
 impl Domain for PerlinNoise {
     fn in_domain(&self, value: f32) -> f32 {
         match self.domain {
-            Some([a, b]) => a + (b - a) * (value + 0.5),
+            Some([a, b]) => a + b * (value + 0.5),
             None => value,
         }
     }

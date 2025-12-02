@@ -16,7 +16,7 @@ impl Builder for SimplexNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
-            domain: self.domain,
+            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             perm,
@@ -37,7 +37,7 @@ pub struct SimplexNoise {
 impl Domain for SimplexNoise {
     fn in_domain(&self, value: f32) -> f32 {
         match self.domain {
-            Some([a, b]) => a + (b - a) * (value + 1.0) * 0.5,
+            Some([a, b]) => a + b * (value + 1.0) * 0.5,
             None => value,
         }
     }

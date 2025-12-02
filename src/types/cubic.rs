@@ -15,7 +15,7 @@ impl Builder for CubicNoiseBuilder {
     type Output = CubicNoise;
     fn build(self) -> Self::Output {
         Self::Output {
-            domain: self.domain,
+            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             perm: permutate(self.seed)[0],
@@ -34,7 +34,7 @@ pub struct CubicNoise {
 impl Domain for CubicNoise {
     fn in_domain(&self, value: f32) -> f32 {
         match self.domain {
-            Some([a, b]) => a + (b - a) * (value + 0.5),
+            Some([a, b]) => a + b * (value + 0.5),
             None => value,
         }
     }
