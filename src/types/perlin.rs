@@ -1,10 +1,11 @@
 use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
 
-use crate::{Builder, Interp, Sampler, utils::*};
+use crate::{Builder, Interp, Sampler, traits::Domain, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PerlinNoiseBuilder {
+    pub domain: Option<[f32; 2]>,
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
     pub interp: Interp,
@@ -16,6 +17,7 @@ impl Builder for PerlinNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
+            domain: self.domain,
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             interp: self.interp,
@@ -27,11 +29,21 @@ impl Builder for PerlinNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct PerlinNoise {
+    domain: Option<[f32; 2]>,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
     perm: [u8; 512],
     perm12: [u8; 512],
+}
+
+impl Domain for PerlinNoise {
+    fn in_domain(&self, value: f32) -> f32 {
+        match self.domain {
+            Some([a, b]) => a + (b - a) * (value + 0.5),
+            None => value,
+        }
+    }
 }
 
 impl From<PerlinNoiseBuilder> for PerlinNoise {

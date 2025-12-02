@@ -29,6 +29,7 @@ fn main() -> Result<(), BuilderError> {
             frequency: 1.12,
             interp: Interp::Quintic,
             seed: 31337,
+            ..Default::default()
         }.into(),
         noise1: SimplexNoiseBuilder {
             fractal_noise: Some(FractalNoiseBuilder {
@@ -39,6 +40,7 @@ fn main() -> Result<(), BuilderError> {
             }),
             frequency: 0.912,
             seed: 8008135,
+            ..Default::default()
         }.into(),
         weights: None,
     }.build()?;

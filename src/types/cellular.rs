@@ -1,12 +1,12 @@
 use glam::{IVec3, Vec2, Vec3A, ivec2, ivec3};
 
-use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
-
+use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, traits::Domain, utils::*};
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CellularNoiseBuilder {
     pub cellular_distance_function: CellularDistanceFunction,
     pub cellular_jitter: f32,
     pub cellular_return_type: CellularReturnType,
+    pub domain: Option<[f32; 2]>,
     pub frequency: f32,
     pub seed: u64,
 }
@@ -18,6 +18,7 @@ impl Builder for CellularNoiseBuilder {
             cellular_distance_function: self.cellular_distance_function,
             cellular_jitter: self.cellular_jitter,
             cellular_return_type: self.cellular_return_type,
+            domain: self.domain,
             frequency: self.frequency,
             perm: permutate(self.seed)[0],
             seed: self.seed as i32,
@@ -30,6 +31,7 @@ pub struct CellularNoise {
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,
     cellular_return_type: CellularReturnType,
+    domain: Option<[f32; 2]>,
     frequency: f32,
     perm: [u8; 512],
     seed: i32,
@@ -38,26 +40,36 @@ pub struct CellularNoise {
 impl Sampler for CellularNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        match self.cellular_return_type {
+        let sample = match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular3d(pos),
             CellularReturnType::Distance => self.single_cellular3d(pos),
-        }
+        };
+        self.in_domain(sample)
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
-        match self.cellular_return_type {
+        let sample = match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular(pos),
             CellularReturnType::Distance => self.single_cellular(pos),
-        }
+        };
+        self.in_domain(sample)
     }
 
 }
 
+impl Domain for CellularNoise {
+    fn in_domain(&self, value: f32) -> f32 {
+        match self.domain {
+            Some([a, b]) => a + (b - a) * (value + 1.0) * 0.5,
+            None => value,
+        }
+    }
+}
+
 impl CellularNoise {
+
     fn single_cellular(&self, pos: Vec2) -> f32 {
-        // let xr = fast_round(x);
-        // let yr = fast_round(y);
         let [x, y] = pos.to_array();
         let [xr, yr] = pos.round().as_ivec2().to_array();
 

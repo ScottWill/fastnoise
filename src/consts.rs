@@ -1853,7 +1853,7 @@ pub(super) const CELL_3D: [Vec3A; 256] = [
     vec3a(CELL_3D_X[255], CELL_3D_Y[255], CELL_3D_Z[255]),
 ];
 
-pub(super) const FN_CELLULAR_INDEX_MAX: usize = 3;
+// pub(super) const FN_CELLULAR_INDEX_MAX: usize = 3;
 pub(super) const X_PRIME: i32 = 1619;
 pub(super) const Y_PRIME: i32 = 31337;
 pub(super) const Z_PRIME: i32 = 6971;
