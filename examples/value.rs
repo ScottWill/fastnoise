@@ -27,7 +27,7 @@ fn main() {
 
     for y in 0..50 {
         for x in 0..80 {
-            let n = noise.sample2d([(x as f32) / 160.0, (y as f32) / 100.0]);
+            let n = noise.sample2d([(x as f32) / 160.0, (y as f32) / 100.0]) - 0.5;
 
             max = max.max(n);
             min = min.min(n);

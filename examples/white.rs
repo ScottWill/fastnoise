@@ -33,8 +33,7 @@ fn main() {
             max = max.max(n);
             min = min.min(n);
 
-            let col = (n + 1.0) * 0.5;
-            print_color(RGB::from_f32(col, col, col), "▒");
+            print_color(RGB::from_f32(n, n, n), "▒");
         }
         print_color(RGB::named(WHITE), "\n");
     }
