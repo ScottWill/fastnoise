@@ -1,11 +1,10 @@
 use glam::{Vec3A, vec4};
 
-use crate::{Builder, Sampler, consts::*, traits::Domain, utils::*};
+use crate::{Builder, Sampler, consts::*, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimplexNoiseBuilder {
-    pub domain: Option<[f32; 2]>,
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
     pub seed: u64,
@@ -16,7 +15,6 @@ impl Builder for SimplexNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
-            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             perm,
@@ -27,20 +25,10 @@ impl Builder for SimplexNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct SimplexNoise {
-    domain: Option<[f32; 2]>,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     perm: [u8; 512],
     perm12: [u8; 512],
-}
-
-impl Domain for SimplexNoise {
-    fn in_domain(&self, value: f32) -> f32 {
-        match self.domain {
-            Some([a, b]) => a + b * (value + 1.0) * 0.5,
-            None => value,
-        }
-    }
 }
 
 impl From<SimplexNoiseBuilder> for SimplexNoise {
@@ -52,13 +40,13 @@ impl From<SimplexNoiseBuilder> for SimplexNoise {
 impl Sampler for SimplexNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let value = match self.fractal_noise {
+        let sample = match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.simplex3d(offset, pos)
             }),
             None => self.simplex3d(None, pos),
         };
-        self.in_domain(value)
+        normalize(sample, 1.0, 0.5)
     }
 }
 

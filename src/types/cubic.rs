@@ -1,11 +1,10 @@
 use glam::{Vec3A, ivec3};
 
-use crate::{Builder, Sampler, consts::CUBIC_3D_BOUNDING, traits::Domain, utils::*};
+use crate::{Builder, Sampler, consts::CUBIC_3D_BOUNDING, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CubicNoiseBuilder {
-    pub domain: Option<[f32; 2]>,
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
     pub seed: u64,
@@ -15,7 +14,6 @@ impl Builder for CubicNoiseBuilder {
     type Output = CubicNoise;
     fn build(self) -> Self::Output {
         Self::Output {
-            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             perm: permutate(self.seed)[0],
@@ -25,19 +23,9 @@ impl Builder for CubicNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct CubicNoise {
-    domain: Option<[f32; 2]>,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     perm: [u8; 512],
-}
-
-impl Domain for CubicNoise {
-    fn in_domain(&self, value: f32) -> f32 {
-        match self.domain {
-            Some([a, b]) => a + b * (value + 0.5),
-            None => value,
-        }
-    }
 }
 
 impl From<CubicNoiseBuilder> for CubicNoise {
@@ -49,13 +37,13 @@ impl From<CubicNoiseBuilder> for CubicNoise {
 impl Sampler for CubicNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let value = match self.fractal_noise {
+        let sample = match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.cubic3d(offset, pos)
             }),
             None => self.cubic3d(None, pos),
         };
-        self.in_domain(value)
+        normalize(sample, 0.5, 1.0)
     }
 }
 

@@ -17,7 +17,6 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = PerlinNoiseBuilder {
-        domain: Some([-2.0, 3.0]),
         frequency: PI,
         seed: 8008135,
         ..Default::default()

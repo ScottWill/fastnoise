@@ -1,12 +1,11 @@
 use glam::{IVec3, Vec2, Vec3A, ivec2, ivec3};
 
-use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, traits::Domain, utils::*};
+use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CellularNoiseBuilder {
     pub cellular_distance_function: CellularDistanceFunction,
     pub cellular_jitter: f32,
     pub cellular_return_type: CellularReturnType,
-    pub domain: Option<[f32; 2]>,
     pub frequency: f32,
     pub seed: u64,
 }
@@ -18,7 +17,6 @@ impl Builder for CellularNoiseBuilder {
             cellular_distance_function: self.cellular_distance_function,
             cellular_jitter: self.cellular_jitter,
             cellular_return_type: self.cellular_return_type,
-            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             frequency: self.frequency,
             perm: permutate(self.seed)[0],
             seed: self.seed as i32,
@@ -31,7 +29,6 @@ pub struct CellularNoise {
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,
     cellular_return_type: CellularReturnType,
-    domain: Option<[f32; 2]>,
     frequency: f32,
     perm: [u8; 512],
     seed: i32,
@@ -44,7 +41,7 @@ impl Sampler for CellularNoise {
             CellularReturnType::CellValue => self.single_cellular3d(pos),
             CellularReturnType::Distance => self.single_cellular3d(pos),
         };
-        self.in_domain(sample)
+        normalize(sample, 1.0, 0.5)
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
@@ -53,18 +50,9 @@ impl Sampler for CellularNoise {
             CellularReturnType::CellValue => self.single_cellular(pos),
             CellularReturnType::Distance => self.single_cellular(pos),
         };
-        self.in_domain(sample)
+        normalize(sample, 1.0, 0.5)
     }
 
-}
-
-impl Domain for CellularNoise {
-    fn in_domain(&self, value: f32) -> f32 {
-        match self.domain {
-            Some([a, b]) => a + b * (value + 1.0) * 0.5,
-            None => value,
-        }
-    }
 }
 
 impl CellularNoise {

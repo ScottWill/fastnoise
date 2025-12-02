@@ -1,11 +1,10 @@
 use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
 
-use crate::{Builder, Interp, Sampler, traits::Domain, utils::*};
+use crate::{Builder, Interp, Sampler, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PerlinNoiseBuilder {
-    pub domain: Option<[f32; 2]>,
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
     pub interp: Interp,
@@ -17,7 +16,6 @@ impl Builder for PerlinNoiseBuilder {
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
         Self::Output {
-            domain: self.domain.and_then(|[a, b]| Some([a, b - a])),
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             interp: self.interp,
@@ -29,21 +27,11 @@ impl Builder for PerlinNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct PerlinNoise {
-    domain: Option<[f32; 2]>,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
     perm: [u8; 512],
     perm12: [u8; 512],
-}
-
-impl Domain for PerlinNoise {
-    fn in_domain(&self, value: f32) -> f32 {
-        match self.domain {
-            Some([a, b]) => a + b * (value + 0.5),
-            None => value,
-        }
-    }
 }
 
 impl From<PerlinNoiseBuilder> for PerlinNoise {
@@ -55,29 +43,28 @@ impl From<PerlinNoiseBuilder> for PerlinNoise {
 impl Sampler for PerlinNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let value = match self.fractal_noise {
+        let sample = match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.perlin3d(offset, pos)
             }),
             None => self.perlin3d(None, pos),
         };
-        self.in_domain(value)
+        normalize(sample, 1.0, 0.5)
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
-        let value = match self.fractal_noise {
+        let sample = match self.fractal_noise {
             Some(fractal) => fractal.sample2d(pos, |offset, pos| {
                 self.perlin(offset, pos)
             }),
             None => self.perlin(None, pos),
         };
-        self.in_domain(value)
+        normalize(sample, 1.0, 0.5)
     }
 }
 
 impl PerlinNoise {
-
     fn perlin3d(&self, offset: Option<usize>, pos: Vec3A) -> f32 {
         let offset = match offset {
             Some(ix) => self.perm[ix],
