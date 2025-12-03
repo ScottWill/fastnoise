@@ -96,14 +96,14 @@ impl FractalNoise {
     fn rigid3d<F>(&self, mut pos: Vec3A, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec3A) -> f32
     {
-        let mut sum: f32 = noise_fn(Some(0), pos).abs();
+        let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
         let mut amp: f32 = 1.0;
         let mut i = 1;
 
         while i < self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += noise_fn(Some(i), pos).abs() * amp;
+            sum -= (1.0 - noise_fn(Some(i), pos).abs()) * amp;
             i += 1;
         }
 
