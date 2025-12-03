@@ -33,12 +33,12 @@ impl MixType {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct MixedNoiseBuilder {
     pub amplitude: f32,
     pub mix_type: MixType,
-    pub noise0: NoiseBuilder,
-    pub noise1: NoiseBuilder,
+    pub noise0: NoiseSampler,
+    pub noise1: NoiseSampler,
 }
 
 impl Default for MixedNoiseBuilder {
@@ -59,8 +59,8 @@ impl Builder for MixedNoiseBuilder {
             amplitude: self.amplitude,
             mix_type: self.mix_type,
             noises: [
-                Box::new(self.noise0.try_build_noise_sampler()?),
-                Box::new(self.noise1.try_build_noise_sampler()?),
+                Box::new(self.noise0),
+                Box::new(self.noise1),
             ],
         })
     }
