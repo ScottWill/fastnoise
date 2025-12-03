@@ -20,11 +20,11 @@ fn main() {
         amplitude: 1.0,
         fractal_noise: Some(FractalNoiseBuilder {
             fractal_type: FractalType::RigidMulti,
-            gain: 1.3,
+            gain: 0.718,
             lacunarity: 2.1,
             octaves: 6,
         }),
-        frequency: PI * 0.1,
+        frequency: PI,
         interp: Interp::Hermite,
         seed: 8008135,
     }.build();
@@ -40,8 +40,6 @@ fn main() {
 
             max = max.max(n);
             min = min.min(n);
-
-            let n = n - 0.5;
 
             if n < 0.0 {
                 print_color(RGB::from_f32(0.0, 0.0, 1.0 - (0.0 - n)), "░");

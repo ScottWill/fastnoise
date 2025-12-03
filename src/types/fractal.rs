@@ -44,10 +44,6 @@ pub struct FractalNoise {
 }
 
 impl FractalNoise {
-    pub(super) fn fractal_bounding(&self) -> f32 {
-        self.fractal_bounding
-    }
-
     pub(super) fn sample3d<F>(&self, pos: Vec3A, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec3A) -> f32
     {
@@ -64,13 +60,11 @@ impl FractalNoise {
     {
         let mut sum: f32 = noise_fn(Some(0), pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
             sum += noise_fn(Some(i), pos).abs().mul_add(2.0, -1.0) * amp;
-            i += 1;
         }
 
         sum * self.fractal_bounding
@@ -81,13 +75,11 @@ impl FractalNoise {
     {
         let mut sum: f32 = noise_fn(Some(0), pos);
         let mut amp: f32 = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
             sum += noise_fn(Some(i), pos) * amp;
-            i += 1;
         }
 
         sum * self.fractal_bounding
@@ -97,14 +89,12 @@ impl FractalNoise {
     where F: Fn(Option<usize>, Vec3A) -> f32
     {
         let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
+        let mut amp: f32 = -1.0;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum -= (1.0 - noise_fn(Some(i), pos).abs()) * amp;
-            i += 1;
+            sum += (1.0 - noise_fn(Some(i), pos).abs()) * amp;
         }
 
         sum
@@ -127,13 +117,11 @@ impl FractalNoise {
     {
         let mut sum: f32 = noise_fn(Some(0), pos).abs().mul_add(2.0, -1.0);
         let mut amp: f32 = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
             sum += noise_fn(Some(i), pos).abs().mul_add(2.0, -1.0) * amp;
-            i += 1;
         }
 
         sum * self.fractal_bounding
@@ -144,13 +132,11 @@ impl FractalNoise {
     {
         let mut sum: f32 = noise_fn(Some(0), pos);
         let mut amp: f32 = 1.0;
-        let mut i = 1;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
             sum += noise_fn(Some(i), pos) * amp;
-            i += 1;
         }
 
         sum * self.fractal_bounding
@@ -159,15 +145,13 @@ impl FractalNoise {
     fn rigid2d<F>(&self, mut pos: Vec2, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec2) -> f32
     {
-        let mut sum: f32 = noise_fn(Some(0), pos).abs();
-        let mut amp: f32 = 1.0;
-        let mut i = 1;
+        let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
+        let mut amp: f32 = -1.0;
 
-        while i < self.octaves {
+        for i in 1..self.octaves {
             pos *= self.lacunarity;
             amp *= self.gain;
-            sum += noise_fn(Some(i), pos).abs() * amp;
-            i += 1;
+            sum += (1.0 - noise_fn(Some(i), pos).abs()) * amp;
         }
 
         sum
