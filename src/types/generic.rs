@@ -326,12 +326,11 @@ impl NoiseBuilder {
             _ => Err(BuilderError::MissingParameter("gain".to_owned())),
         }
     }
-    fn interp(&self, _use_default: bool) -> Result<Interp, BuilderError> {
+    fn interp(&self, use_default: bool) -> Result<Interp, BuilderError> {
         match self.interp {
             Some(value) => Ok(value),
-            // None if use_default => Ok(Default::default()),
-            // _ => Err(BuilderError::MissingParameter("interp".to_owned())),
-            None => Ok(Default::default()),
+            None if use_default => Ok(Default::default()),
+            _ => Err(BuilderError::MissingParameter("interp".to_owned())),
         }
     }
     fn lacunarity(&self, use_default: bool) -> Result<f32, BuilderError> {
@@ -351,7 +350,7 @@ impl NoiseBuilder {
     fn seed(&self, use_default: bool) -> Result<u64, BuilderError> {
         match self.seed {
             Some(value) => Ok(value),
-            None if use_default => Ok(18446744073709551557),
+            None if use_default => Ok(0),
             _ => Err(BuilderError::MissingParameter("seed".to_owned())),
         }
     }
