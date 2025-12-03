@@ -50,7 +50,8 @@ impl FractalNoise {
         match self.fractal_type {
             FractalType::Billow => self.billow3d(pos, noise_fn),
             FractalType::FBM => self.fbm3d(pos, noise_fn),
-            FractalType::RigidMulti => self.rigid3d(pos, noise_fn),
+            FractalType::RigidAlt => self.rigid_alt3d(pos, noise_fn),
+            FractalType::RigidMulti => self.rigid_multi3d(pos, noise_fn),
             FractalType::None => noise_fn(None, pos),
         }
     }
@@ -85,7 +86,22 @@ impl FractalNoise {
         sum * self.fractal_bounding
     }
 
-    fn rigid3d<F>(&self, mut pos: Vec3A, noise_fn: F) -> f32
+    fn rigid_alt3d<F>(&self, mut pos: Vec3A, noise_fn: F) -> f32
+    where F: Fn(Option<usize>, Vec3A) -> f32
+    {
+        let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
+        let mut amp: f32 = 1.0;
+
+        for i in 1..self.octaves {
+            pos *= self.lacunarity;
+            amp *= -self.gain;
+            sum += (1.0 - noise_fn(Some(i), pos).abs()) * amp;
+        }
+
+        sum
+    }
+
+    fn rigid_multi3d<F>(&self, mut pos: Vec3A, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec3A) -> f32
     {
         let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
@@ -107,7 +123,8 @@ impl FractalNoise {
         match self.fractal_type {
             FractalType::Billow => self.billow2d(pos, noise_fn),
             FractalType::FBM => self.fbm2d(pos, noise_fn),
-            FractalType::RigidMulti => self.rigid2d(pos, noise_fn),
+            FractalType::RigidAlt => self.rigid_alt2d(pos, noise_fn),
+            FractalType::RigidMulti => self.rigid_multi2d(pos, noise_fn),
             FractalType::None => noise_fn(None, pos),
         }
     }
@@ -142,7 +159,22 @@ impl FractalNoise {
         sum * self.fractal_bounding
     }
 
-    fn rigid2d<F>(&self, mut pos: Vec2, noise_fn: F) -> f32
+    fn rigid_alt2d<F>(&self, mut pos: Vec2, noise_fn: F) -> f32
+    where F: Fn(Option<usize>, Vec2) -> f32
+    {
+        let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();
+        let mut amp: f32 = 1.0;
+
+        for i in 1..self.octaves {
+            pos *= self.lacunarity;
+            amp *= -self.gain;
+            sum += (1.0 - noise_fn(Some(i), pos).abs()) * amp;
+        }
+
+        sum
+    }
+
+    fn rigid_multi2d<F>(&self, mut pos: Vec2, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec2) -> f32
     {
         let mut sum: f32 = 1.0 - noise_fn(Some(0), pos).abs();

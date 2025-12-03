@@ -41,6 +41,7 @@ pub enum FractalType {
     None,
     FBM,
     Billow,
+    RigidAlt,
     RigidMulti,
 }
 
