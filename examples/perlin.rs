@@ -19,7 +19,7 @@ fn main() {
     let noise = PerlinNoiseBuilder {
         amplitude: 1.0,
         fractal_noise: Some(FractalNoiseBuilder {
-            fractal_type: FractalType::Billow,
+            fractal_type: FractalType::RigidMulti,
             gain: 1.3,
             lacunarity: 2.1,
             octaves: 6,

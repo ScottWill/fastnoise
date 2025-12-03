@@ -126,6 +126,7 @@ pub(super) fn permutate(seed: u64) -> [[u8; 512]; 2] {
     [perm, perm12]
 }
 
+#[inline]
 pub(super) fn fractal_bounding(gain: f32, octaves: u16) -> f32 {
     let mut amp = gain;
     let mut fb = 1.0;
