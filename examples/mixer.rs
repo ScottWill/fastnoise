@@ -3,6 +3,7 @@ use crossterm::queue;
 use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
 use fastnoise::{Builder as _, BuilderError, FractalNoiseBuilder, FractalType, Interp, MixType, MixedNoiseBuilder, PerlinNoiseBuilder, Sampler as _, SimplexNoiseBuilder, sample2d};
 use glam::{Vec2, uvec2};
+use std::f32::consts::PI;
 use std::io::{stdout, Write as _};
 
 fn print_color(color: RGB, text: &str) {
@@ -18,6 +19,7 @@ fn print_color(color: RGB, text: &str) {
 fn main() -> Result<(), BuilderError> {
 
     let noise = MixedNoiseBuilder {
+        amplitude: PI * 0.5,
         mix_type: MixType::Subtract,
         noise0: PerlinNoiseBuilder {
             amplitude: 3.0,
