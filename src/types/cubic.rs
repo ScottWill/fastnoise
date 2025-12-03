@@ -37,13 +37,12 @@ impl From<CubicNoiseBuilder> for CubicNoise {
 impl Sampler for CubicNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let sample = match self.fractal_noise {
+        match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.cubic3d(offset, pos)
             }),
             None => self.cubic3d(None, pos),
-        };
-        normalize(sample, 0.5, 1.0)
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 use bracket_color::prelude::*;
 use crossterm::queue;
 use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
-use fastnoise::{Builder as _, FractalNoiseBuilder, FractalType, PerlinNoiseBuilder, Sampler as _};
+use fastnoise::{Builder as _, FractalNoiseBuilder, FractalType, Interp, PerlinNoiseBuilder, Sampler as _};
 use std::f32::consts::PI;
 use std::io::{stdout, Write as _};
 
@@ -17,20 +17,30 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = PerlinNoiseBuilder {
-        frequency: PI,
+        fractal_noise: Some(FractalNoiseBuilder {
+            fractal_type: FractalType::RigidMulti,
+            gain: 1.3,
+            lacunarity: 2.1,
+            octaves: 6,
+        }),
+        frequency: PI * 0.1,
+        interp: Interp::Hermite,
         seed: 8008135,
-        ..Default::default()
     }.build();
+
+    println!("{:?}", noise);
 
     let mut max = f32::MIN;
     let mut min = f32::MAX;
 
     for y in 0..50 {
         for x in 0..80 {
-            let n = noise.sample2d([(x as f32) / 160.0, (y as f32) / 100.0]) - 0.5;
+            let n = noise.sample2d([(x as f32) / 160.0, (y as f32) / 100.0]);
 
             max = max.max(n);
             min = min.min(n);
+
+            let n = n - 0.5;
 
             if n < 0.0 {
                 print_color(RGB::from_f32(0.0, 0.0, 1.0 - (0.0 - n)), "░");

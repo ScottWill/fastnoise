@@ -15,8 +15,15 @@ impl Builder for PerlinNoiseBuilder {
     type Output = PerlinNoise;
     fn build(self) -> Self::Output {
         let [perm, perm12] = permutate(self.seed);
+        let fractal_noise = self.fractal_noise
+            .and_then(|v| Some(v.build()));
+        let bounding = match fractal_noise {
+            Some(v) => v.sample3d(Vec3A::ZERO, |_, _| 1.0),
+            None => 1.0,
+        };
         Self::Output {
-            fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
+            bounding,
+            fractal_noise,
             frequency: self.frequency,
             interp: self.interp,
             perm,
@@ -27,6 +34,7 @@ impl Builder for PerlinNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct PerlinNoise {
+    bounding: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
@@ -49,7 +57,8 @@ impl Sampler for PerlinNoise {
             }),
             None => self.perlin3d(None, pos),
         };
-        normalize(sample, 1.0, 0.5)
+        // normalize(sample, 1.0)
+        sample
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
@@ -60,7 +69,8 @@ impl Sampler for PerlinNoise {
             }),
             None => self.perlin(None, pos),
         };
-        normalize(sample, 1.0, 0.5)
+        // normalize(sample, 1.0)
+        sample
     }
 }
 

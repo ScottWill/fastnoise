@@ -40,13 +40,12 @@ impl From<SimplexNoiseBuilder> for SimplexNoise {
 impl Sampler for SimplexNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let sample = match self.fractal_noise {
+        match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.simplex3d(offset, pos)
             }),
             None => self.simplex3d(None, pos),
-        };
-        normalize(sample, 1.0, 0.5)
+        }
     }
 }
 

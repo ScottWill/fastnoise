@@ -33,6 +33,10 @@ pub struct FractalNoise {
 }
 
 impl FractalNoise {
+    pub(super) fn fractal_bounding(&self) -> f32 {
+        self.fractal_bounding
+    }
+
     pub(super) fn sample3d<F>(&self, pos: Vec3A, noise_fn: F) -> f32
     where F: Fn(Option<usize>, Vec3A) -> f32
     {

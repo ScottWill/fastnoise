@@ -1,6 +1,6 @@
 use glam::{Vec2, Vec3A, ivec2, ivec3};
 
-use crate::{Builder, Sampler, utils::{normalize, val_coord_2d, val_coord_3d}};
+use crate::{Builder, Sampler, utils::{val_coord_2d, val_coord_3d}};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct WhiteNoiseBuilder {
@@ -32,13 +32,11 @@ impl From<WhiteNoiseBuilder> for WhiteNoise {
 
 impl Sampler for WhiteNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
-        let sample = self.get_white_noise3d(position.into());
-        normalize(sample, 1.0, 0.5)
+        self.get_white_noise3d(position.into())
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
-        let sample = self.get_white_noise(position.into());
-        normalize(sample, 1.0, 0.5)
+        self.get_white_noise(position.into())
     }
 
 }

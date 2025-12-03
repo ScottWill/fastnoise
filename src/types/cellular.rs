@@ -37,20 +37,18 @@ pub struct CellularNoise {
 impl Sampler for CellularNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        let sample = match self.cellular_return_type {
+        match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular3d(pos),
             CellularReturnType::Distance => self.single_cellular3d(pos),
-        };
-        normalize(sample, 1.0, 0.5)
+        }
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
-        let sample = match self.cellular_return_type {
+        match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular(pos),
             CellularReturnType::Distance => self.single_cellular(pos),
-        };
-        normalize(sample, 1.0, 0.5)
+        }
     }
 
 }

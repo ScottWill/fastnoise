@@ -135,8 +135,3 @@ pub(super) fn fractal_bounding(gain: f32, octaves: u16) -> f32 {
     }
     1.0 / fb
 }
-
-#[inline]
-pub(super) fn normalize(value: f32, a: f32, b: f32) -> f32 {
-    (value + a) * b
-}

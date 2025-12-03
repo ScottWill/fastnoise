@@ -1,7 +1,7 @@
 use bracket_color::prelude::*;
 use crossterm::queue;
 use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
-use fastnoise::{Builder as _, Sampler as _, CubicNoiseBuilder};
+use fastnoise::{Builder as _, CubicNoiseBuilder, FractalNoiseBuilder, FractalType, Sampler as _};
 use std::f32::consts::PI;
 use std::io::{stdout, Write as _};
 
@@ -20,11 +20,17 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = CubicNoiseBuilder {
-        // domain: Some([0.2, 13.0]),
+        fractal_noise: Some(FractalNoiseBuilder {
+            fractal_type: FractalType::Billow,
+            gain: 1.2,
+            lacunarity: 2.1,
+            octaves: 4,
+        }),
         frequency: PI,
         seed: 31337,
-        ..Default::default()
     }.build();
+
+    println!("{noise:?}");
 
     let mut max = f32::MIN;
     let mut min = f32::MAX;
