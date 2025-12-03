@@ -20,6 +20,7 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = CubicNoiseBuilder {
+        amplitude: 1.0,
         fractal_noise: Some(FractalNoiseBuilder {
             fractal_type: FractalType::Billow,
             gain: 1.2,

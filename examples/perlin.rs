@@ -17,8 +17,9 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = PerlinNoiseBuilder {
+        amplitude: 1.0,
         fractal_noise: Some(FractalNoiseBuilder {
-            fractal_type: FractalType::RigidMulti,
+            fractal_type: FractalType::Billow,
             gain: 1.3,
             lacunarity: 2.1,
             octaves: 6,

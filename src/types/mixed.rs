@@ -8,10 +8,11 @@ use crate::{Builder, NoiseBuilder, NoiseSampler, Sampler, types::generic::Builde
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub enum MixType {
     #[default]
-    Avg,
-    Max,
-    Min,
-    SMin(f32),
+    Add,
+    Average,
+    Maximum,
+    Minimum,
+    Subtract,
 }
 
 impl Display for MixType {
@@ -23,19 +24,13 @@ impl Display for MixType {
 impl MixType {
     fn mix(&self, a: f32, b: f32) -> f32 {
         match self {
-            MixType::Avg => (a + b) / 2.0,
-            MixType::Max => f32::min(a, b),
-            MixType::Min => f32::max(a, b),
-            MixType::SMin(k) => smin(a, b, *k),
+            MixType::Add => a + b,
+            MixType::Average => (a + b) * 0.5,
+            MixType::Maximum => f32::max(a, b),
+            MixType::Minimum => f32::min(a, b),
+            MixType::Subtract => a - b,
         }
     }
-}
-
-// quadratic polynomial
-#[inline]
-fn smin(a: f32, b: f32, k: f32) -> f32 {
-    let h = (k - (a - b).abs()).max(0.0) / (k * 4.0);
-    a.min(b) - h * h * k
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -43,7 +38,6 @@ pub struct MixedNoiseBuilder {
     pub mix_type: MixType,
     pub noise0: NoiseBuilder,
     pub noise1: NoiseBuilder,
-    pub weights: Option<[f32; 2]>,
 }
 
 impl Builder for MixedNoiseBuilder {
@@ -51,18 +45,10 @@ impl Builder for MixedNoiseBuilder {
     fn build(self) -> Self::Output {
         Ok(MixedNoise {
             mix_type: self.mix_type,
-            noises: [
-                Box::new(self.noise0.try_build_noise_sampler()?),
-                Box::new(self.noise1.try_build_noise_sampler()?),
-            ],
-            weights: match self.weights {
-                Some([a, b]) => {
-                    if a < 0.0 { return Err(BuilderError::InvalidValue(a.to_string())) }
-                    if b < 0.0 { return Err(BuilderError::InvalidValue(b.to_string())) }
-                    [a, b]
-                },
-                None => [1.0; 2],
-            },
+            noises: Box::new([
+                self.noise0.try_build_noise_sampler()?,
+                self.noise1.try_build_noise_sampler()?,
+            ]),
         })
     }
 }
@@ -70,19 +56,18 @@ impl Builder for MixedNoiseBuilder {
 #[derive(Clone, Debug)]
 pub struct MixedNoise {
     mix_type: MixType,
-    noises: [Box<NoiseSampler>; 2],
-    weights: [f32; 2],
+    noises: Box<[NoiseSampler; 2]>,
 }
 
 impl Sampler for MixedNoise {
     fn sample3d<P>(&self, position: P) -> f32 where P: Copy + Into<glam::Vec3A> {
-        let sample0 = self.noises[0].sample3d(position) * self.weights[0];
-        let sample1 = self.noises[1].sample3d(position) * self.weights[1];
+        let sample0 = self.noises[0].sample3d(position);
+        let sample1 = self.noises[1].sample3d(position);
         self.mix_type.mix(sample0, sample1)
     }
     fn sample2d<P>(&self, position: P) -> f32 where P: Copy + Into<glam::Vec2> {
-        let sample0 = self.noises[0].sample2d(position) * self.weights[0];
-        let sample1 = self.noises[1].sample2d(position) * self.weights[1];
+        let sample0 = self.noises[0].sample2d(position);
+        let sample1 = self.noises[1].sample2d(position);
         self.mix_type.mix(sample0, sample1)
     }
 }

@@ -1,8 +1,9 @@
 use glam::{IVec3, Vec2, Vec3A, ivec2, ivec3};
 
 use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct CellularNoiseBuilder {
+    pub amplitude: f32,
     pub cellular_distance_function: CellularDistanceFunction,
     pub cellular_jitter: f32,
     pub cellular_return_type: CellularReturnType,
@@ -10,10 +11,24 @@ pub struct CellularNoiseBuilder {
     pub seed: u64,
 }
 
+impl Default for CellularNoiseBuilder {
+    fn default() -> Self {
+        Self {
+            amplitude: 1.0,
+            cellular_distance_function: Default::default(),
+            cellular_jitter: Default::default(),
+            cellular_return_type: Default::default(),
+            frequency: 1.0,
+            seed: Default::default(),
+        }
+    }
+}
+
 impl Builder for CellularNoiseBuilder {
     type Output = CellularNoise;
     fn build(self) -> Self::Output {
         Self::Output {
+            amplitude: self.amplitude,
             cellular_distance_function: self.cellular_distance_function,
             cellular_jitter: self.cellular_jitter,
             cellular_return_type: self.cellular_return_type,
@@ -26,6 +41,7 @@ impl Builder for CellularNoiseBuilder {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CellularNoise {
+    amplitude: f32,
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,
     cellular_return_type: CellularReturnType,
@@ -37,18 +53,20 @@ pub struct CellularNoise {
 impl Sampler for CellularNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        match self.cellular_return_type {
+        let value = match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular3d(pos),
             CellularReturnType::Distance => self.single_cellular3d(pos),
-        }
+        };
+        value * self.amplitude
     }
 
     fn sample2d<P>(&self, position: P) -> f32 where P: Into<glam::Vec2> {
         let pos = position.into() * self.frequency;
-        match self.cellular_return_type {
+        let value = match self.cellular_return_type {
             CellularReturnType::CellValue => self.single_cellular(pos),
             CellularReturnType::Distance => self.single_cellular(pos),
-        }
+        };
+        value * self.amplitude
     }
 
 }

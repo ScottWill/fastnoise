@@ -3,18 +3,32 @@ use glam::{Vec3A, ivec3, vec4};
 use crate::{Builder, Interp, Sampler, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct ValueNoiseBuilder {
+    pub amplitude: f32,
     pub fractal_noise: Option<FractalNoiseBuilder>,
     pub frequency: f32,
     pub interp: Interp,
     pub seed: u64,
 }
 
+impl Default for ValueNoiseBuilder {
+    fn default() -> Self {
+        Self {
+            amplitude: 1.0,
+            fractal_noise: Default::default(),
+            frequency: 1.0,
+            interp: Default::default(),
+            seed: Default::default(),
+        }
+    }
+}
+
 impl Builder for ValueNoiseBuilder {
     type Output = ValueNoise;
     fn build(self) -> Self::Output {
         Self::Output {
+            amplitude: self.amplitude,
             fractal_noise: self.fractal_noise.and_then(|v| Some(v.build())),
             frequency: self.frequency,
             interp: self.interp,
@@ -25,6 +39,7 @@ impl Builder for ValueNoiseBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub struct ValueNoise {
+    amplitude: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
@@ -40,12 +55,13 @@ impl From<ValueNoiseBuilder> for ValueNoise {
 impl Sampler for ValueNoise {
     fn sample3d<V>(&self, position: V) -> f32 where V: Into<glam::Vec3A> {
         let pos = position.into() * self.frequency;
-        match self.fractal_noise {
+        let value = match self.fractal_noise {
             Some(fractal) => fractal.sample3d(pos, |offset, pos| {
                 self.value3d(offset, pos)
             }),
             None => self.value3d(None, pos),
-        }
+        };
+        value * self.amplitude
     }
 }
 

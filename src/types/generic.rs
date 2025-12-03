@@ -11,6 +11,7 @@ pub enum BuilderError {
 
 #[derive(Debug, Default, Deserialize, Clone, Copy, Serialize)]
 pub struct NoiseBuilder {
+    pub amplitude: Option<f32>,
     pub cellular_distance_function: Option<CellularDistanceFunction>,
     pub cellular_jitter: Option<f32>,
     pub cellular_return_type: Option<CellularReturnType>,
@@ -27,6 +28,7 @@ pub struct NoiseBuilder {
 impl From<CellularNoiseBuilder> for NoiseBuilder {
     fn from(value: CellularNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             cellular_distance_function: Some(value.cellular_distance_function),
             cellular_jitter: Some(value.cellular_jitter),
             cellular_return_type: Some(value.cellular_return_type),
@@ -41,6 +43,7 @@ impl From<CellularNoiseBuilder> for NoiseBuilder {
 impl From<CubicNoiseBuilder> for NoiseBuilder {
     fn from(value: CubicNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             fractal_type: value.fractal_noise.and_then(|f| Some(f.fractal_type)),
             frequency: Some(value.frequency),
             gain: value.fractal_noise.and_then(|f| Some(f.gain)),
@@ -56,6 +59,7 @@ impl From<CubicNoiseBuilder> for NoiseBuilder {
 impl From<PerlinNoiseBuilder> for NoiseBuilder {
     fn from(value: PerlinNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             fractal_type: value.fractal_noise.and_then(|f| Some(f.fractal_type)),
             frequency: Some(value.frequency),
             gain: value.fractal_noise.and_then(|f| Some(f.gain)),
@@ -72,6 +76,7 @@ impl From<PerlinNoiseBuilder> for NoiseBuilder {
 impl From<SimplexNoiseBuilder> for NoiseBuilder {
     fn from(value: SimplexNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             fractal_type: value.fractal_noise.and_then(|f| Some(f.fractal_type)),
             frequency: Some(value.frequency),
             gain: value.fractal_noise.and_then(|f| Some(f.gain)),
@@ -87,6 +92,7 @@ impl From<SimplexNoiseBuilder> for NoiseBuilder {
 impl From<ValueNoiseBuilder> for NoiseBuilder {
     fn from(value: ValueNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             fractal_type: value.fractal_noise.and_then(|f| Some(f.fractal_type)),
             frequency: Some(value.frequency),
             gain: value.fractal_noise.and_then(|f| Some(f.gain)),
@@ -103,6 +109,7 @@ impl From<ValueNoiseBuilder> for NoiseBuilder {
 impl From<WhiteNoiseBuilder> for NoiseBuilder {
     fn from(value: WhiteNoiseBuilder) -> Self {
         Self {
+            amplitude: Some(value.amplitude),
             frequency: Some(value.frequency),
             noise_type: Some(NoiseType::White),
             seed: Some(value.seed),
@@ -183,6 +190,7 @@ impl NoiseBuilder {
     fn into_cellular(self, use_default: bool) -> Result<CellularNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::Cellular) => Ok(CellularNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 cellular_distance_function: self.cellular_distance_function(use_default)?,
                 cellular_jitter: self.cellular_jitter(use_default)?,
                 cellular_return_type: self.cellular_return_type(use_default)?,
@@ -196,6 +204,7 @@ impl NoiseBuilder {
     fn into_cubic(self, use_default: bool) -> Result<CubicNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::Cubic) => Ok(CubicNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 fractal_noise: match self.fractal_type {
                     Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
                     None => None,
@@ -210,6 +219,7 @@ impl NoiseBuilder {
     fn into_perlin(self, use_default: bool) -> Result<PerlinNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::Perlin) => Ok(PerlinNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 fractal_noise: match self.fractal_type {
                     Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
                     None => None,
@@ -225,6 +235,7 @@ impl NoiseBuilder {
     fn into_simplex(self, use_default: bool) -> Result<SimplexNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::Simplex) => Ok(SimplexNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 fractal_noise: match self.fractal_type {
                     Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
                     None => None,
@@ -239,6 +250,7 @@ impl NoiseBuilder {
     fn into_value(self, use_default: bool) -> Result<ValueNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::Value) => Ok(ValueNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 fractal_noise: match self.fractal_type {
                     Some(fractal) => Some(self.fractal_noise(fractal, use_default)?),
                     None => None,
@@ -254,10 +266,19 @@ impl NoiseBuilder {
     fn into_white(self, use_default: bool) -> Result<WhiteNoise, BuilderError> {
         match self.noise_type {
             Some(NoiseType::White) => Ok(WhiteNoiseBuilder {
+                amplitude: self.amplitude(use_default)?,
                 frequency: self.frequency(use_default)?,
                 seed: self.seed(use_default)?,
             }.build()),
             _ => Err(BuilderError::InvalidNoiseType),
+        }
+    }
+
+    fn amplitude(&self, use_default: bool) -> Result<f32, BuilderError> {
+        match self.amplitude {
+            Some(value) => Ok(value),
+            None if use_default => Ok(1.0),
+            _ => Err(BuilderError::MissingParameter("amplitude".to_owned())),
         }
     }
 

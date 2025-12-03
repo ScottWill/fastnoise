@@ -19,6 +19,7 @@ fn print_color(color: RGB, text: &str) {
 
 fn main() {
     let noise = WhiteNoiseBuilder {
+        amplitude: 1.0,
         frequency: 2.0,
         seed: 31337,
     }.build();

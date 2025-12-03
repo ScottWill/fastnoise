@@ -2,12 +2,23 @@ use glam::{Vec2, Vec3A};
 
 use crate::{Builder, FractalType, utils::fractal_bounding};
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct FractalNoiseBuilder {
     pub fractal_type: FractalType,
     pub gain: f32,
     pub lacunarity: f32,
     pub octaves: u16,
+}
+
+impl Default for FractalNoiseBuilder {
+    fn default() -> Self {
+        Self {
+            fractal_type: Default::default(),
+            gain: 1.0,
+            lacunarity: 1.0,
+            octaves: 1,
+        }
+    }
 }
 
 impl Builder for FractalNoiseBuilder {

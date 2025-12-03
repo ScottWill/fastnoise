@@ -18,8 +18,9 @@ fn print_color(color: RGB, text: &str) {
 fn main() -> Result<(), BuilderError> {
 
     let noise = MixedNoiseBuilder {
-        mix_type: MixType::Avg,
+        mix_type: MixType::Subtract,
         noise0: PerlinNoiseBuilder {
+            amplitude: 3.0,
             fractal_noise: Some(FractalNoiseBuilder {
                 fractal_type: FractalType::FBM,
                 gain: 0.6,
@@ -32,6 +33,7 @@ fn main() -> Result<(), BuilderError> {
             ..Default::default()
         }.into(),
         noise1: SimplexNoiseBuilder {
+            amplitude: 0.8,
             fractal_noise: Some(FractalNoiseBuilder {
                 fractal_type: FractalType::RigidMulti,
                 gain: 1.3,
@@ -40,9 +42,7 @@ fn main() -> Result<(), BuilderError> {
             }),
             frequency: 0.912,
             seed: 8008135,
-            ..Default::default()
         }.into(),
-        weights: None,
     }.build()?;
 
     sample2d(&noise, Vec2::ZERO, Vec2::splat(0.5), uvec2(80, 50))
