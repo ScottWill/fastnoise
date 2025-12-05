@@ -1,7 +1,7 @@
 use bracket_color::prelude::*;
 use crossterm::queue;
 use crossterm::style::{Color::Rgb, Print, SetForegroundColor};
-use fastnoise::{Builder as _, FractalNoiseBuilder, FractalType, ValueNoiseBuilder, Sampler as _};
+use fastnoise::*;
 use std::f32::consts::PI;
 use std::io::{stdout, Write as _};
 

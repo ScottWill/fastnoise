@@ -1,9 +1,8 @@
-#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Debug, Default, PartialEq, Copy, Clone)]
+
+#[derive(Debug, Default, PartialEq, Copy, Clone, Serialize, Deserialize)]
 /// Type of noise to generate
 pub enum NoiseType {
     Cellular,
@@ -21,8 +20,7 @@ impl Display for NoiseType {
     }
 }
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Debug, Default, PartialEq, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone, Serialize, Deserialize)]
 /// Interpolation function to use
 pub enum Interp {
     #[default]
@@ -37,8 +35,7 @@ impl Display for Interp {
     }
 }
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Debug, Default, PartialEq, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone, Serialize, Deserialize)]
 /// Fractal function to use
 pub enum FractalType {
     #[default]
@@ -55,8 +52,7 @@ impl Display for FractalType {
     }
 }
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Debug, Default, PartialEq, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone, Serialize, Deserialize)]
 /// Cellular noise distance function to use
 pub enum CellularDistanceFunction {
     #[default]
@@ -71,8 +67,7 @@ impl Display for CellularDistanceFunction {
     }
 }
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Debug, Default, PartialEq, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone, Serialize, Deserialize)]
 /// What type of cellular noise result do you want
 pub enum CellularReturnType {
     #[default]

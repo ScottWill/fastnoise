@@ -1,12 +1,10 @@
 use glam::{UVec2, UVec3, Vec2, Vec3};
-#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
 use crate::{types::mixed::MixedNoise, *};
 use super::utils::lerp;
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub enum NoiseSampler {
     Cellular(CellularNoise),
     Cubic(CubicNoise),
@@ -119,7 +117,7 @@ impl From<WhiteNoise> for NoiseSampler {
     }
 }
 
-#[cfg(feature = "parallel")]
+#[cfg(feature = "rayon")]
 pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution: UVec2) -> Vec<f32> {
     use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
@@ -144,7 +142,7 @@ pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution
 
 }
 
-#[cfg(not(feature = "parallel"))]
+#[cfg(not(feature = "rayon"))]
 pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution: UVec2) -> Vec<f32> {
     let resolution = resolution.as_usizevec2();
     let size = resolution.element_product();
@@ -171,7 +169,7 @@ pub fn sample_cube<S: Sampler + Sync>(sampler: &S, resolution: u32) -> Vec<f32> 
     sample3d(sampler, Vec3::ZERO, Vec3::ONE, UVec3::splat(resolution))
 }
 
-#[cfg(feature = "parallel")]
+#[cfg(feature = "rayon")]
 pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution: UVec3) -> Vec<f32> {
     use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
@@ -197,7 +195,7 @@ pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution
     result
 }
 
-#[cfg(not(feature = "parallel"))]
+#[cfg(not(feature = "rayon"))]
 pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution: UVec3) -> Vec<f32> {
     let resolution = resolution.as_usizevec3();
     let size = resolution.element_product();

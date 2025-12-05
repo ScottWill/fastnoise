@@ -1,11 +1,9 @@
 use glam::{Vec2, Vec3A};
-#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
 use crate::{Builder, FractalType, utils::fractal_bounding};
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct FractalNoiseBuilder {
     pub fractal_type: FractalType,
     pub gain: f32,
@@ -37,8 +35,7 @@ impl Builder for FractalNoiseBuilder {
     }
 }
 
-#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct FractalNoise {
     fractal_bounding: f32,
     fractal_type: FractalType,
