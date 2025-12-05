@@ -1,10 +1,11 @@
 use glam::{UVec2, UVec3, Vec2, Vec3};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 
 use crate::{types::mixed::MixedNoise, *};
 use super::utils::lerp;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub enum NoiseSampler {
     Cellular(CellularNoise),
     Cubic(CubicNoise),

@@ -1,9 +1,11 @@
 use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, Bytes};
 
 use crate::{Builder, Interp, Sampler, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct PerlinNoiseBuilder {
     pub amplitude: f32,
     pub fractal_noise: Option<FractalNoiseBuilder>,
@@ -40,13 +42,16 @@ impl Builder for PerlinNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[serde_as]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct PerlinNoise {
     amplitude: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
+    #[serde_as(as = "Bytes")]
     perm: [u8; 512],
+    #[serde_as(as = "Bytes")]
     perm12: [u8; 512],
 }
 

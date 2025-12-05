@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Builder, NoiseBuilder, NoiseSampler, Sampler, types::generic::BuilderError};
+use crate::{Builder, NoiseSampler, Sampler, types::generic::BuilderError};
 
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -33,7 +33,7 @@ impl MixType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MixedNoiseBuilder {
     pub amplitude: f32,
     pub mix_type: MixType,
@@ -66,7 +66,7 @@ impl Builder for MixedNoiseBuilder {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MixedNoise {
     amplitude: f32,
     mix_type: MixType,

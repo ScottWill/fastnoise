@@ -1,9 +1,11 @@
 use glam::{Vec3A, ivec3};
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, Bytes};
 
 use crate::{Builder, Sampler, consts::CUBIC_3D_BOUNDING, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct CubicNoiseBuilder {
     pub amplitude: f32,
     pub fractal_noise: Option<FractalNoiseBuilder>,
@@ -34,11 +36,13 @@ impl Builder for CubicNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[serde_as]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct CubicNoise {
     amplitude: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
+    #[serde_as(as = "Bytes")]
     perm: [u8; 512],
 }
 

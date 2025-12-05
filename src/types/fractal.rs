@@ -1,8 +1,9 @@
 use glam::{Vec2, Vec3A};
+use serde::{Deserialize, Serialize};
 
 use crate::{Builder, FractalType, utils::fractal_bounding};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct FractalNoiseBuilder {
     pub fractal_type: FractalType,
     pub gain: f32,
@@ -34,7 +35,7 @@ impl Builder for FractalNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct FractalNoise {
     fractal_bounding: f32,
     fractal_type: FractalType,

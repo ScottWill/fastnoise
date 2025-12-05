@@ -1,7 +1,10 @@
 use glam::{IVec3, Vec2, Vec3A, ivec2, ivec3};
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, Bytes};
 
 use crate::{Builder, CellularDistanceFunction, CellularReturnType, Sampler, consts::*, utils::*};
-#[derive(Clone, Copy, Debug)]
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct CellularNoiseBuilder {
     pub amplitude: f32,
     pub cellular_distance_function: CellularDistanceFunction,
@@ -39,13 +42,15 @@ impl Builder for CellularNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[serde_as]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct CellularNoise {
     amplitude: f32,
     cellular_distance_function: CellularDistanceFunction,
     cellular_jitter: f32,
     cellular_return_type: CellularReturnType,
     frequency: f32,
+    #[serde_as(as = "Bytes")]
     perm: [u8; 512],
     seed: i32,
 }
