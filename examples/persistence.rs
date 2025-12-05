@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 
 fn main() -> Result<(), BuilderError> {
 
-    let noise = MixedNoiseBuilder {
+    let noise = NoiseSampler::Mixed(MixedNoiseBuilder {
         amplitude: PI * 0.5,
         mix_type: MixType::Subtract,
         noise0: PerlinNoiseBuilder {
@@ -30,11 +30,15 @@ fn main() -> Result<(), BuilderError> {
             frequency: 0.912,
             seed: 8008135,
         }.into(),
-    }.build()?;
+    }.build()?);
 
     let r = ron::to_string(&noise).expect("should have worked");
 
     println!("{r}");
+
+    let s: NoiseSampler = ron::from_str(&r).expect("should have worked");
+
+    println!("{s:?}");
 
     Ok(())
 }
