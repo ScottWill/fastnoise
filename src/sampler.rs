@@ -1,5 +1,4 @@
 use glam::{UVec2, UVec3, Vec2, Vec3};
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 #[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
@@ -120,7 +119,10 @@ impl From<WhiteNoise> for NoiseSampler {
     }
 }
 
+#[cfg(feature = "parallel")]
 pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution: UVec2) -> Vec<f32> {
+    use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+
     let resolution = resolution.as_usizevec2();
     let size = resolution.element_product();
     let mut result = Vec::with_capacity(size);
@@ -142,6 +144,25 @@ pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution
 
 }
 
+#[cfg(not(feature = "parallel"))]
+pub fn sample2d<S: Sampler + Sync>(sampler: &S, min: Vec2, max: Vec2, resolution: UVec2) -> Vec<f32> {
+    let resolution = resolution.as_usizevec2();
+    let size = resolution.element_product();
+    (0..size)
+        .into_iter()
+        .map(|ix| {
+            let tx = (ix % resolution.x) as f32 / resolution.x as f32;
+            let ty = (ix / resolution.x) as f32 / resolution.y as f32;
+            let pos = Vec2::new(
+                lerp(min.x, max.x, tx),
+                lerp(min.y, max.y, ty),
+            );
+            let sample = sampler.sample2d(pos);
+            sample
+        })
+        .collect()
+}
+
 pub fn sample_plane<S: Sampler + Sync>(sampler: &S, resolution: u32) -> Vec<f32> {
     sample2d(sampler, Vec2::ZERO, Vec2::ONE, UVec2::splat(resolution))
 }
@@ -150,7 +171,10 @@ pub fn sample_cube<S: Sampler + Sync>(sampler: &S, resolution: u32) -> Vec<f32> 
     sample3d(sampler, Vec3::ZERO, Vec3::ONE, UVec3::splat(resolution))
 }
 
+#[cfg(feature = "parallel")]
 pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution: UVec3) -> Vec<f32> {
+    use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+
     let resolution = resolution.as_usizevec3();
     let size = resolution.element_product();
     let mut result = Vec::with_capacity(size);
@@ -171,4 +195,25 @@ pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution
         .collect_into_vec(&mut result);
 
     result
+}
+
+#[cfg(not(feature = "parallel"))]
+pub fn sample3d<S: Sampler + Sync>(sampler: &S, min: Vec3, max: Vec3, resolution: UVec3) -> Vec<f32> {
+    let resolution = resolution.as_usizevec3();
+    let size = resolution.element_product();
+    (0..size)
+        .into_iter()
+        .map(|ix| {
+            let tx = (ix % resolution.x) as f32 / resolution.x as f32;
+            let ty = (ix / (resolution.x % resolution.z)) as f32 / resolution.y as f32;
+            let tz = (ix / (resolution.x * resolution.z)) as f32 / resolution.z as f32;
+            let pos = Vec3::new(
+                lerp(min.x, max.x, tx),
+                lerp(min.y, max.y, ty),
+                lerp(min.z, max.z, tz),
+            );
+            let sample = sampler.sample3d(pos);
+            sample
+        })
+        .collect()
 }
