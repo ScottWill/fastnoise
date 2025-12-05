@@ -1,3 +1,4 @@
+#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
 use crate::*;
@@ -9,7 +10,8 @@ pub enum BuilderError {
     MissingParameter(String),
 }
 
-#[derive(Debug, Default, Deserialize, Clone, Copy, Serialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct NoiseBuilder {
     pub amplitude: Option<f32>,
     pub cellular_distance_function: Option<CellularDistanceFunction>,

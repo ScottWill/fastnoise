@@ -1,11 +1,11 @@
 use std::fmt::{Debug, Display};
-
+#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
 use crate::{Builder, NoiseSampler, Sampler, types::generic::BuilderError};
 
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum MixType {
     #[default]
     Add,
@@ -33,7 +33,8 @@ impl MixType {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct MixedNoiseBuilder {
     pub amplitude: f32,
     pub mix_type: MixType,
@@ -66,7 +67,8 @@ impl Builder for MixedNoiseBuilder {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct MixedNoise {
     amplitude: f32,
     mix_type: MixType,

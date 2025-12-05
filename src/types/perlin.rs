@@ -1,11 +1,14 @@
 use glam::{Vec2, Vec3A, Vec4Swizzles as _, ivec2, ivec3, vec2, vec3a, vec4};
+#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "persistence")]
 use serde_with::{serde_as, Bytes};
 
 use crate::{Builder, Interp, Sampler, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct PerlinNoiseBuilder {
     pub amplitude: f32,
     pub fractal_noise: Option<FractalNoiseBuilder>,
@@ -42,16 +45,17 @@ impl Builder for PerlinNoiseBuilder {
     }
 }
 
-#[serde_as]
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "persistence", serde_as)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct PerlinNoise {
     amplitude: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
     interp: Interp,
-    #[serde_as(as = "Bytes")]
+    #[cfg_attr(feature = "persistence", serde_as(as = "Bytes"))]
     perm: [u8; 512],
-    #[serde_as(as = "Bytes")]
+    #[cfg_attr(feature = "persistence", serde_as(as = "Bytes"))]
     perm12: [u8; 512],
 }
 

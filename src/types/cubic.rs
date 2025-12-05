@@ -1,11 +1,14 @@
 use glam::{Vec3A, ivec3};
+#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "persistence")]
 use serde_with::{serde_as, Bytes};
 
 use crate::{Builder, Sampler, consts::CUBIC_3D_BOUNDING, utils::*};
 use super::fractal::{FractalNoise, FractalNoiseBuilder};
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct CubicNoiseBuilder {
     pub amplitude: f32,
     pub fractal_noise: Option<FractalNoiseBuilder>,
@@ -36,13 +39,14 @@ impl Builder for CubicNoiseBuilder {
     }
 }
 
-#[serde_as]
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "persistence", serde_as)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct CubicNoise {
     amplitude: f32,
     fractal_noise: Option<FractalNoise>,
     frequency: f32,
-    #[serde_as(as = "Bytes")]
+    #[cfg_attr(feature = "persistence", serde_as(as = "Bytes"))]
     perm: [u8; 512],
 }
 

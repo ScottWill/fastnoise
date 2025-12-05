@@ -1,9 +1,11 @@
 use glam::{Vec2, Vec3A, ivec2, ivec3};
+#[cfg(feature = "persistence")]
 use serde::{Deserialize, Serialize};
 
 use crate::{Builder, Sampler, utils::{val_coord_2d, val_coord_3d}};
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct WhiteNoiseBuilder {
     pub amplitude: f32,
     pub frequency: f32,
@@ -31,7 +33,8 @@ impl Builder for WhiteNoiseBuilder {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "persistence", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct WhiteNoise {
     amplitude: f32,
     frequency: f32,
